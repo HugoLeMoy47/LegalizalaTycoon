@@ -1,0 +1,22 @@
+{
+  // Configuración de despliegue en Cloudflare Workers (Static Assets).
+  //
+  // El juego es 100% client-side (Bitácora #010): no hay código de servidor,
+  // así que este es un Worker "assets-only" — no declara `main`, solo publica
+  // el directorio que produce `npm run build`.
+  //
+  // IMPORTANTE: `name` debe coincidir exactamente con el nombre del Worker en
+  // el panel de Cloudflare. Si no coincide, `wrangler deploy` crearía un Worker
+  // distinto en lugar de actualizar el existente.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "legalizalatycoon",
+  "compatibility_date": "2026-09-06",
+  "assets": {
+    "directory": "./dist",
+    // Una sola ruta: cualquier URL sirve index.html en lugar de un 404.
+    "not_found_handling": "single-page-application"
+  },
+  "observability": {
+    "enabled": true
+  }
+}

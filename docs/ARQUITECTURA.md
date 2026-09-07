@@ -247,9 +247,16 @@ Bundle total: **~241 KB (74 KB gzip)**.
   almacenamiento bloqueado, la partida sigue viva en memoria.
 * **Versionado del esquema:** la clave lleva `:v1`. Si el estado guardado no valida
   mínimamente, se descarta y se inicia una partida limpia.
-* **Despliegue:** Cloudflare Pages / Vercel desde la raíz (`base: '/'`). Para GitHub
-  Pages bajo subruta, `BASE_PATH=/LegalizalaTycoon/ npm run build` — el `vite.config.ts`
-  lee esa variable de entorno y no hay que tocar código.
+* **Despliegue:** Cloudflare Workers con Static Assets, desde la raíz (`base: '/'`).
+  Al no haber código de servidor, `wrangler.jsonc` describe un Worker *assets-only*:
+  publica `dist/` y no declara `main`. El `not_found_handling` es
+  `single-page-application` porque el juego vive en una sola ruta.
+  Para GitHub Pages bajo subruta, `BASE_PATH=/LegalizalaTycoon/ npm run build` — el
+  `vite.config.ts` lee esa variable de entorno y no hay que tocar código.
+* **Versión de Node:** `.nvmrc` fija `22`. No es una preferencia: wrangler 4.x
+  exige Node ≥ 22 y el primer intento de despliegue falló con la 20.11 que teníamos
+  pinneada. La CI de GitHub lee el mismo archivo, así que build local, CI y
+  despliegue corren sobre la misma versión.
 
 ---
 

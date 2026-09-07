@@ -209,11 +209,37 @@ Ajustar el balanceo es editar `src/engine/balance.ts` y volver a correr
 
 ## 🚢 Despliegue
 
-Sitio estático servido desde la raíz del dominio. Compila con `npm run build` y
-publica `dist/`.
+Sitio estático servido desde la raíz del dominio (`base: '/'`). Compila con
+`npm run build` y publica `dist/`.
 
-* **Cloudflare Pages / Vercel** (objetivo actual): build `npm run build`,
-  directorio de salida `dist`. Sin configuración extra.
+### Cloudflare Workers — Static Assets (objetivo actual)
+
+El juego no tiene código de servidor, así que se despliega como un Worker
+*assets-only*: [`wrangler.jsonc`](wrangler.jsonc) declara `dist/` como directorio
+de assets y no define `main`.
+
+| Ajuste en el panel de Cloudflare | Valor |
+| :--- | :--- |
+| Comando de build | `npm run build` |
+| Comando de deploy | `npx wrangler deploy` |
+| Versión de Node | la toma de [`.nvmrc`](.nvmrc) → `22` |
+
+> ⚠️ El campo `name` de `wrangler.jsonc` **debe coincidir exactamente** con el
+> nombre del Worker en el panel. Si no coincide, `wrangler deploy` crea un Worker
+> nuevo en lugar de actualizar el existente.
+
+Wrangler requiere **Node ≥ 22**; por eso `.nvmrc` apunta a `22` y no a la 20.x.
+
+Para desplegar desde tu máquina:
+
+```bash
+npm run deploy
+```
+
+### Otras plataformas
+
+* **Cloudflare Pages / Vercel** (sin comando de deploy): build `npm run build`,
+  directorio de salida `dist`. `wrangler.jsonc` se ignora.
 * **GitHub Pages** bajo subruta: `BASE_PATH=/LegalizalaTycoon/ npm run build`.
   No hace falta tocar código.
 
