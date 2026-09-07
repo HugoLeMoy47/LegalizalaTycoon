@@ -1,8 +1,8 @@
 blank_issues_enabled: true
 contact_links:
   - name: 📖 Documentos de diseño
-    url: https://github.com/hugolemoy/legalizalatycoon/tree/main/docs
+    url: https://github.com/HugoLeMoy47/LegalizalaTycoon/tree/main/docs
     about: GDD, guía técnica, bitácora de decisiones y documento de arquitectura.
   - name: 🔒 Reportar una vulnerabilidad
-    url: https://github.com/hugolemoy/legalizalatycoon/security/advisories/new
+    url: https://github.com/HugoLeMoy47/LegalizalaTycoon/security/advisories/new
     about: No abras un issue público para vulnerabilidades. Usa Security Advisories.

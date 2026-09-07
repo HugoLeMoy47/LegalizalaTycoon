@@ -248,7 +248,7 @@ Bundle total: **~241 KB (74 KB gzip)**.
 * **Versionado del esquema:** la clave lleva `:v1`. Si el estado guardado no valida
   mínimamente, se descarta y se inicia una partida limpia.
 * **Despliegue:** Cloudflare Pages / Vercel desde la raíz (`base: '/'`). Para GitHub
-  Pages bajo subruta, `BASE_PATH=/legalizalatycoon/ npm run build` — el `vite.config.ts`
+  Pages bajo subruta, `BASE_PATH=/LegalizalaTycoon/ npm run build` — el `vite.config.ts`
   lee esa variable de entorno y no hay que tocar código.
 
 ---

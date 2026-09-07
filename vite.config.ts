@@ -8,7 +8,7 @@ import react from '@vitejs/plugin-react';
  * Para publicar en GitHub Pages bajo una subruta (https://usuario.github.io/<repo>/)
  * basta con exportar la variable de entorno antes de compilar, sin tocar codigo:
  *
- *   BASE_PATH=/legalizalatycoon/ npm run build
+ *   BASE_PATH=/LegalizalaTycoon/ npm run build
  */
 const base = process.env.BASE_PATH ?? '/';
 

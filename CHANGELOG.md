@@ -85,5 +85,5 @@ Primera prueba de concepto jugable. Corresponde a la Entrada #011 de la
 - El Apoyo Social inicial pasó de 25% a 30%: con 25% el primer drenaje semanal detonaba
   el evento de ruptura interna en la semana 1.
 
-[No publicado]: https://github.com/hugolemoy/legalizalatycoon/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/hugolemoy/legalizalatycoon/releases/tag/v0.1.0
+[No publicado]: https://github.com/HugoLeMoy47/LegalizalaTycoon/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/HugoLeMoy47/LegalizalaTycoon/releases/tag/v0.1.0

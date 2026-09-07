@@ -2,7 +2,7 @@
 
 ### *Activismo Tycoon* — Serious game de simulación legislativa mexicana
 
-[![CI](https://github.com/hugolemoy/legalizalatycoon/actions/workflows/ci.yml/badge.svg)](https://github.com/hugolemoy/legalizalatycoon/actions/workflows/ci.yml)
+[![CI](https://github.com/HugoLeMoy47/LegalizalaTycoon/actions/workflows/ci.yml/badge.svg)](https://github.com/HugoLeMoy47/LegalizalaTycoon/actions/workflows/ci.yml)
 [![Código: MIT](https://img.shields.io/badge/c%C3%B3digo-MIT-blue.svg)](LICENSE)
 [![Contenido: CC BY-NC-SA 4.0](https://img.shields.io/badge/contenido-CC%20BY--NC--SA%204.0-lightgrey.svg)](LICENSE-CONTENT)
 
@@ -214,7 +214,7 @@ publica `dist/`.
 
 * **Cloudflare Pages / Vercel** (objetivo actual): build `npm run build`,
   directorio de salida `dist`. Sin configuración extra.
-* **GitHub Pages** bajo subruta: `BASE_PATH=/legalizalatycoon/ npm run build`.
+* **GitHub Pages** bajo subruta: `BASE_PATH=/LegalizalaTycoon/ npm run build`.
   No hace falta tocar código.
 
 ---
