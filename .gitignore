@@ -22,3 +22,6 @@ pnpm-debug.log*
 
 .vercel
 .wrangler/
+
+# Artefactos incrementales de TypeScript
+*.tsbuildinfo
