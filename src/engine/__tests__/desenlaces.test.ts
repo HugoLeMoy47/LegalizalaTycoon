@@ -16,11 +16,11 @@ import {
 } from '../index';
 import { ESTRATEGA_COLECTIVO } from '../../sim/politicas';
 import { simularPartida } from '../../sim/simulador';
-import { avanzarSemanas, estadoSinComision } from './ayudas';
+import { avanzarSemanas, conSistemasDesbloqueados, estadoSinComision } from './ayudas';
 
 describe('Derrota por congeladora', () => {
   it('congela la comisión cuando el reloj llega a cero y termina la partida', () => {
-    let estado = crearEstadoInicial();
+    let estado = conSistemasDesbloqueados(crearEstadoInicial());
     estado.comisionActiva!.relojCongeladoraSemanas = 1;
     estado = avanzarSemanas(estado, 1);
 
@@ -42,7 +42,7 @@ describe('Derrota por congeladora', () => {
   });
 
   it('no acepta comandos después del desenlace', () => {
-    let estado = crearEstadoInicial();
+    let estado = conSistemasDesbloqueados(crearEstadoInicial());
     estado.comisionActiva!.relojCongeladoraSemanas = 1;
     estado = avanzarSemanas(estado, 1);
 

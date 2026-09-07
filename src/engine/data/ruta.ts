@@ -13,7 +13,8 @@ export const RUTA_LEGISLATIVA: NodoRuta[] = [
     etiqueta: 'Mesa Directiva del Cabildo',
     fase: 'MUNICIPAL',
     tipo: 'MESA',
-    estado: 'ACTIVO',
+    // Se sella hasta la semana 6, cuando Oficialia de Partes valida (v2.0).
+    estado: 'PENDIENTE',
   },
   {
     id: 'com-gobernacion',

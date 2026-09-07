@@ -436,10 +436,18 @@ function aplicarCarta(estado: GameState, carta: CartaEvento): void {
 // Orquestador
 // ---------------------------------------------------------------------------
 
-/** Corre todos los despachadores en el orden canonico del turno. */
+/**
+ * Corre todos los despachadores en el orden canonico del turno.
+ *
+ * v2.0: durante las Etapas A y B (semanas 1-5) el expediente todavia no existe
+ * para el Congreso, asi que ningun disparador legislativo tiene sentido. Solo
+ * quedan vivos los sociales (alerta del regimen, fisura interna), que dependen
+ * de recursos y no de comisiones.
+ */
 export function despacharEventos(estado: GameState): void {
   dispararAlertaDelRegimen(estado);
   dispararRupturaInterna(estado);
+  if (!estado.comisionDesbloqueada) return;
   levantarCartaEvento(estado);
   dispararCesionAutoria(estado);
   dispararOfertaMutilacion(estado);

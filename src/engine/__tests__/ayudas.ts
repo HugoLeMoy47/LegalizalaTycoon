@@ -63,12 +63,23 @@ export function aplicar(estado: GameState, comandos: ComandoJuego[]): GameState 
 /**
  * Estado de laboratorio: sin comisión activa, para aislar mecánicas de
  * recursos sin que el reloj de la congeladora termine la partida.
+ *
+ * v2.0: se marcan los sistemas como desbloqueados porque estas pruebas miden
+ * el régimen permanente del ciclo semanal, no la progresión escalonada del
+ * early game (esa vive en `balance_early_game.test.ts`).
  */
 export function estadoSinComision(semilla = 1234): GameState {
   const estado = crearEstadoInicial({ semilla });
   estado.comisionActiva = null;
   estado.colaComisiones = [];
+  estado.colectivoDesbloqueado = true;
+  estado.comisionDesbloqueada = true;
   return estado;
+}
+
+/** Marca las Etapas A y B como superadas, dejando el juego en régimen normal. */
+export function conSistemasDesbloqueados(estado: GameState): GameState {
+  return { ...estado, colectivoDesbloqueado: true, comisionDesbloqueada: true };
 }
 
 /** Fuerza la postura FAVOR en los legisladores necesarios para dictaminar. */

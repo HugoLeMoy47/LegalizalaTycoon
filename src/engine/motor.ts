@@ -33,6 +33,7 @@ import {
 } from './acciones';
 import {
   BLOQUE_HORAS_EXTRA,
+  CADENCIA_GACETA_SEMANAS,
   COSTO_OPERATIVO_SEMANAL,
   COSTO_RESISTENCIA_POR_BLOQUE,
   DECAIMIENTO_PRESION_BASE,
@@ -42,14 +43,17 @@ import {
   INCREMENTO_FATIGA_ACUMULADA,
   PISO_DECAIMIENTO_SIN_AGENDA,
   PROPORCION_DECAIMIENTO_SIN_AGENDA,
+  RELOJ_CONGELADORA_MUNICIPAL,
+  SEMANA_DESBLOQUEO_COLECTIVO,
+  SEMANA_DESBLOQUEO_COMISION,
   SEMANAS_ANTES_DE_FATIGA_ACUMULADA,
   SEMANA_DISPARADOR_BURNOUT,
   TOPE_MULTIPLICADOR_FATIGA,
   UMBRAL_NIEBLA_MENTAL,
 } from './balance';
-import { TITULARES_GACETA } from './data/narrativa';
+import { MEDIOS_FICTICIOS, TITULARES_GACETA } from './data/narrativa';
 import { aplicarDescansoForzado, despacharEventos, dispararSemana48 } from './disparadores';
-import { esSemanaDeDescanso } from './estado';
+import { esSemanaDeDescanso, marcarNodo, sellar } from './estado';
 import {
   avanzarRelojCongeladora,
   evaluarDesenlace,
@@ -79,6 +83,7 @@ function procesarSemana(estado: GameState): void {
     presionPolitica: estado.recursos.presionPolitica,
     resistencia: estado.recursos.resistencia,
     solidezTecnica: estado.solidezTecnica,
+    firmas: estado.firmasRecolectadas,
   };
   const enDescanso = estado.estadoJuego === 'DESCANSO_FORZADO_SEM_48';
 
@@ -111,10 +116,15 @@ function procesarSemana(estado: GameState): void {
   if (enDescanso) aplicarDescansoForzado(estado);
 
   // --- Paso 3: drenaje de apoyo social por presion sostenida --------------
-  estado.recursos.apoyoSocial = acotar(
-    estado.recursos.apoyoSocial -
-      estado.recursos.presionPolitica * FACTOR_DRENAJE_APOYO_POR_PRESION,
-  );
+  // v2.0: solo desgasta a las bases cuando ya hay expediente en comisiones.
+  // Antes de la semana 6 no estás negociando con nadie, así que no hay de qué
+  // sospechar (GUIA v2.0 seccion 5.D).
+  if (estado.comisionDesbloqueada) {
+    estado.recursos.apoyoSocial = acotar(
+      estado.recursos.apoyoSocial -
+        estado.recursos.presionPolitica * FACTOR_DRENAJE_APOYO_POR_PRESION,
+    );
+  }
 
   // --- Paso 3.1: la presion politica es perecedera ------------------------
   const sinAgenda = estado.comisionActiva === null;
@@ -127,16 +137,18 @@ function procesarSemana(estado: GameState): void {
   estado.recursos.presionPolitica = acotar(estado.recursos.presionPolitica - perdidaPresion);
 
   // --- Paso 3.5: reloj legislativo ----------------------------------------
-  resolverLegislativo(estado);
+  // Nada legislativo ocurre antes de que Oficialía de Partes valide (semana 6).
+  if (estado.comisionDesbloqueada) resolverLegislativo(estado);
 
   // --- Paso 4: reloj de la congeladora ------------------------------------
   const relojCongeladoPorColectivo = enDescanso && (estado.reporteSemana48?.colectivoSostuvo ?? false);
-  if (!relojCongeladoPorColectivo) avanzarRelojCongeladora(estado);
+  if (estado.comisionDesbloqueada && !relojCongeladoPorColectivo) {
+    avanzarRelojCongeladora(estado);
+  }
 
   // --- Paso 4.5: economia blanda y despachadores por umbral ---------------
   aplicarEconomiaSemanal(estado);
   if (estado.estadoJuego === 'JUGANDO' || enDescanso) despacharEventos(estado);
-  publicarGaceta(estado);
 
   // --- Paso 5: chequeo de niebla mental -----------------------------------
   const nieblaPrevia = estado.nieblaMentalActiva;
@@ -160,7 +172,9 @@ function procesarSemana(estado: GameState): void {
   // --- Paso 6: incremento de semana ---------------------------------------
   estado.semanaActual += 1;
 
-  // --- Paso 6.5: fase, semana 48 y desenlaces -----------------------------
+  // --- Paso 6.5: desbloqueos, gaceta, fase, semana 48 y desenlaces --------
+  aplicarDesbloqueosEscalonados(estado);
+  publicarGaceta(estado);
   evaluarTransicionDeFase(estado);
   gestionarDescansoForzado(estado);
   evaluarDesenlace(estado);
@@ -173,6 +187,7 @@ function procesarSemana(estado: GameState): void {
     deltaPresionPolitica: redondear(estado.recursos.presionPolitica - antes.presionPolitica),
     deltaResistencia: redondear(estado.recursos.resistencia - antes.resistencia),
     deltaSolidezTecnica: redondear(estado.solidezTecnica - antes.solidezTecnica),
+    deltaFirmas: estado.firmasRecolectadas - antes.firmas,
     horasTrabajadas: rendimiento.horasTotales,
     horasExtra: estado.recursos.horasExtraMetidas,
   } satisfies ResumenTurno;
@@ -187,11 +202,97 @@ function aplicarEconomiaSemanal(estado: GameState): void {
   estado.recursos.fondos = Math.max(0, estado.recursos.fondos + ingreso - COSTO_OPERATIVO_SEMANAL);
 }
 
-/** Color de gaceta cada cuatro semanas; sin efecto mecanico. */
+/**
+ * Gaceta Semanal (GUIA v2.0 seccion 4.B): titular de prensa satirica cada dos
+ * semanas. No tiene efecto mecanico; es retorica de medios. La UI lo muestra
+ * como recorte de periodico y lo cierra con `CERRAR_GACETA`.
+ */
 function publicarGaceta(estado: GameState): void {
-  if (estado.semanaActual % 4 !== 0) return;
+  if (estado.semanaActual % CADENCIA_GACETA_SEMANAS !== 0) return;
   const titular = elegir(estado, TITULARES_GACETA[estado.faseActual]);
-  registrar(estado, 'GACETA', 'Gaceta parlamentaria', titular);
+  const medio = elegir(estado, MEDIOS_FICTICIOS);
+  estado.gacetaPendiente = {
+    semana: estado.semanaActual,
+    fase: estado.faseActual,
+    titular,
+    medio,
+  };
+  registrar(estado, 'GACETA', medio, titular);
+}
+
+// ---------------------------------------------------------------------------
+// Progresion escalonada del early game (GUIA v2.0 seccion 5.B)
+// ---------------------------------------------------------------------------
+
+/**
+ * Se evalua DESPUES de incrementar la semana, de modo que el reloj de la
+ * congeladora nunca corra en el mismo turno en que se abre la comision.
+ */
+function aplicarDesbloqueosEscalonados(estado: GameState): void {
+  // --- Etapa B (semana 4): nace el Cuartel del Colectivo ---
+  if (!estado.colectivoDesbloqueado && estado.semanaActual >= SEMANA_DESBLOQUEO_COLECTIVO) {
+    estado.colectivoDesbloqueado = true;
+
+    // La abogada pro-bono no se recluta: llega sola, atraída por las firmas.
+    const abogada = estado.colectivo.find((m) => m.rol === 'ABOGADA');
+    if (abogada) {
+      abogada.activo = true;
+    }
+
+    estado.hitoPendiente = {
+      id: 'COLECTIVO_ABIERTO',
+      titulo: '¡Nace el Colectivo Ciudadano!',
+      texto: `Las ${estado.firmasRecolectadas} firmas que juntaste en la plaza llegaron a oídos de ${abogada?.nombre ?? 'una abogada pro-bono'}, litigante estratégica que llevaba meses buscando un caso así. Se suma sin cobrar.`,
+      efectos: [
+        'Se abre el Cuartel del Colectivo',
+        `${abogada?.nombre ?? 'La abogada'} aporta +${abogada?.capacidadHoras ?? 20} hrs/semana que no salen de tu Resistencia`,
+        `Capacidad total del colectivo: ${estado.recursos.horasBaseSemana + (abogada?.capacidadHoras ?? 20)} hrs/semana`,
+        'Puedes reclutar a los demás perfiles cuando tengas apoyo y fondos',
+      ],
+    };
+
+    registrar(
+      estado,
+      'LOGRO',
+      'Se abre el Cuartel del Colectivo',
+      `${abogada?.nombre ?? 'La abogada pro-bono'} se suma al movimiento. Dejaste de estar solo.`,
+    );
+  }
+
+  // --- Etapa C (semana 6): Oficialia de Partes valida la iniciativa ---
+  if (!estado.comisionDesbloqueada && estado.semanaActual >= SEMANA_DESBLOQUEO_COMISION) {
+    estado.comisionDesbloqueada = true;
+
+    const comision = estado.comisionActiva;
+    if (comision) {
+      comision.relojCongeladoraSemanas = RELOJ_CONGELADORA_MUNICIPAL;
+      comision.relojInicial = RELOJ_CONGELADORA_MUNICIPAL;
+      marcarNodo(estado, comision.nodoId, 'ACTIVO');
+    }
+    marcarNodo(estado, 'mesa-municipal', 'APROBADO');
+    sellar(estado, 'TURNADO');
+    sellar(estado, 'EN_COMISION');
+
+    estado.hitoPendiente = {
+      id: 'COMISION_ABIERTA',
+      titulo: 'Oficialía de Partes valida la iniciativa',
+      texto: `Con ${estado.firmasRecolectadas} firmas y el articulado en regla, la ventanilla selló tu iniciativa y la turnó a ${comision?.nombre ?? 'la comisión dictaminadora'}. Ya estás dentro del sistema. Ahora corre el reloj.`,
+      sello: 'TURNADO',
+      efectos: [
+        'Se abre el Panel de la Comisión con los regidores',
+        `Arranca el Reloj de la Congeladora: ${RELOJ_CONGELADORA_MUNICIPAL} semanas para dictaminar`,
+        'Se habilitan el cabildeo directo y la negociación de votos',
+        'A partir de ahora la Presión Política desgasta a tus bases',
+      ],
+    };
+
+    registrar(
+      estado,
+      'SISTEMA',
+      'Turnada a comisión',
+      `${comision?.nombre ?? 'La comisión'} recibe el expediente. Tienes ${RELOJ_CONGELADORA_MUNICIPAL} semanas antes de que el plazo reglamentario expire.`,
+    );
+  }
 }
 
 /** Entra y sale del Descanso Forzado Obligatorio segun el calendario. */
@@ -274,6 +375,15 @@ export function ejecutarComando(
       return comprarVoto(estado, comando.legisladorId);
     case 'RESOLVER_DECISION':
       return resolverDecision(estado, comando.opcionId);
+    case 'CERRAR_HITO':
+      estado.hitoPendiente = null;
+      return { estado, ok: true };
+    case 'CERRAR_GACETA':
+      estado.gacetaPendiente = null;
+      return { estado, ok: true };
+    case 'COMPLETAR_ONBOARDING':
+      estado.onboardingCompletado = true;
+      return { estado, ok: true };
     default:
       return { estado: estadoOriginal, ok: false, mensaje: 'Comando desconocido.' };
   }

@@ -177,6 +177,29 @@ export interface Decision {
   contexto?: Record<string, string>;
 }
 
+/**
+ * Anuncio de un hito de progresion escalonada (Etapas B y C del early game).
+ * A diferencia de `Decision`, no bloquea el turno: es un acuse informativo.
+ */
+export interface HitoDesbloqueo {
+  id: 'COLECTIVO_ABIERTO' | 'COMISION_ABIERTA';
+  titulo: string;
+  texto: string;
+  /** Sello institucional que acompaña al anuncio, si aplica. */
+  sello?: SelloExpediente;
+  /** Consecuencias mecanicas visibles para el jugador. */
+  efectos: string[];
+}
+
+/** Titular de prensa satirica de la Gaceta Semanal (GUIA v2.0 seccion 4.B). */
+export interface TitularGaceta {
+  semana: number;
+  fase: FaseJuego;
+  titular: string;
+  /** Cabecera ficticia del medio que "publica" la nota. */
+  medio: string;
+}
+
 /** Informe de Contingencia del Colectivo en Ausencia del Lider (GDD seccion 9). */
 export interface ReporteColectivo {
   semanaEmision: number;
@@ -199,6 +222,7 @@ export interface ResumenTurno {
   deltaPresionPolitica: number;
   deltaResistencia: number;
   deltaSolidezTecnica: number;
+  deltaFirmas: number;
   horasTrabajadas: number;
   horasExtra: number;
 }
@@ -215,12 +239,22 @@ export interface GameState {
   estadoJuego: EstadoJuego;
   nieblaMentalActiva: boolean; // Se activa si resistencia < 30%
 
+  // --- CAMPOS v2.0 (GUIA_REFINAMIENTO_UX_BALANCE_POC seccion 5.C) ---
+  /** Firmas ciudadanas recolectadas. Meta de la Etapa A: 500. */
+  firmasRecolectadas: number;
+  /** Solidez juridica de la iniciativa (verbo INVESTIGAR). 0-100. */
+  solidezTecnica: number;
+  /** Se abre el Cuartel del Colectivo a partir de la semana 4. */
+  colectivoDesbloqueado: boolean;
+  /** La iniciativa entra a comisiones a partir de la semana 6. */
+  comisionDesbloqueada: boolean;
+  /** Marca si el jugador ya recorrio el wizard de onboarding. */
+  onboardingCompletado: boolean;
+
   // --- EXTENSIONES POC ---
   /** Semilla y cursor del generador determinista (simulaciones reproducibles). */
   semilla: number;
   cursorAleatorio: number;
-  /** Solidez juridica de la iniciativa (verbo INVESTIGAR). 0-100. */
-  solidezTecnica: number;
   /** Horas del lider repartidas entre los 4 verbos esta semana. */
   asignaciones: Record<VerboAccion, number>;
   /** Comisiones aun no abordadas, en orden de embudo. */
@@ -235,6 +269,10 @@ export interface GameState {
   registro: RegistroEvento[];
   /** Modal de decision bloqueante pendiente de resolucion. */
   decisionPendiente: Decision | null;
+  /** Anuncio de hito de desbloqueo pendiente de acuse (no bloquea el turno). */
+  hitoPendiente: HitoDesbloqueo | null;
+  /** Titular de la Gaceta Semanal pendiente de mostrarse (no bloquea el turno). */
+  gacetaPendiente: TitularGaceta | null;
   /** Semanas consecutivas metiendo horas extra (multiplicador de fatiga). */
   semanasConsecutivasHorasExtra: number;
   /** Reporte ejecutivo de la Semana 48 (null hasta que se emite). */
@@ -260,6 +298,9 @@ export type ComandoJuego =
   | { tipo: 'CABILDEAR_LEGISLADOR'; legisladorId: string }
   | { tipo: 'COMPRAR_VOTO'; legisladorId: string }
   | { tipo: 'RESOLVER_DECISION'; opcionId: string }
+  | { tipo: 'CERRAR_HITO' }
+  | { tipo: 'CERRAR_GACETA' }
+  | { tipo: 'COMPLETAR_ONBOARDING' }
   | { tipo: 'AVANZAR_SEMANA' };
 
 export interface ResultadoComando {

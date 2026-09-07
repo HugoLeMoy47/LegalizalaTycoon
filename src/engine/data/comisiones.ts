@@ -6,7 +6,7 @@
  * a partir de la fase estatal (GDD seccion 5).
  */
 
-import { RELOJ_CONGELADORA_ESTANDAR } from '../balance';
+import { RELOJ_CONGELADORA_ESTANDAR, RELOJ_CONGELADORA_MUNICIPAL } from '../balance';
 import type { Comision, FaseJuego, Legislador, Partido, Postura } from '../types';
 
 interface SemillaLegislador {
@@ -40,9 +40,10 @@ const COMISION_GOBERNACION: Comision = {
   id: 'com-gobernacion',
   nombre: 'Comisión de Gobernación y Reglamentos',
   fase: 'MUNICIPAL',
-  // El cabildo tiene baja burocracia: la congeladora existe pero holgada.
-  relojCongeladoraSemanas: 24,
-  relojInicial: 24,
+  // El reloj arranca hasta la semana 6, cuando Oficialia de Partes valida la
+  // iniciativa (GUIA v2.0 seccion 5.B, Etapa C).
+  relojCongeladoraSemanas: RELOJ_CONGELADORA_MUNICIPAL,
+  relojInicial: RELOJ_CONGELADORA_MUNICIPAL,
   votosFavorRequeridos: 4,
   dictamenAprobado: false,
   congelada: false,

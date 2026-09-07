@@ -21,8 +21,8 @@ export const PLANTILLA_COLECTIVO: MiembroColectivo[] = [
       'Cada hora tuya sale de tu propia Resistencia. Eres el recurso más caro del colectivo.',
   },
   {
-    id: 'sofia',
-    nombre: 'Sofía Rendón',
+    id: 'mariana',
+    nombre: 'Mariana Rendón',
     rol: 'ABOGADA',
     horasAsignadas: 0,
     activo: false,

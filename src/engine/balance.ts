@@ -19,6 +19,31 @@ export const SEMANA_INICIO_FEDERAL = 66;
 export const SEMANAS_DESCANSO_FORZADO = [48, 49, 50] as const;
 export const SEMANA_DISPARADOR_BURNOUT = 48;
 
+// --- Progresion escalonada del early game (GUIA v2.0 seccion 5) ------------
+
+/**
+ * Etapa A (1-3): activista solitario, paneles bloqueados.
+ * Etapa B (4-5): se abre el Cuartel del Colectivo y se suma la abogada.
+ * Etapa C (6+):  Oficialia de Partes valida y arranca el reloj de comisiones.
+ *
+ * Justificacion juridica (Art. 71 frac. IV): una iniciativa ciudadana no entra
+ * al Congreso el dia 1; primero hay que juntar firmas y redactar el articulado.
+ */
+export const SEMANA_DESBLOQUEO_COLECTIVO = 4;
+export const SEMANA_DESBLOQUEO_COMISION = 6;
+
+/** Meta de firmas de la Etapa A. */
+export const META_FIRMAS = 500;
+/**
+ * Firmas por hora dedicada a Movilizar. Calibrado para que 20 hrs/semana
+ * durante las tres semanas de la Etapa A (60 hrs) rebasen la meta sin
+ * necesidad de horas extra: 60 x 9 = 540 firmas.
+ */
+export const FIRMAS_POR_HORA_MOVILIZACION = 9;
+
+/** Reloj de la congeladora del Cabildo, activado en la semana 6. */
+export const RELOJ_CONGELADORA_MUNICIPAL = 16;
+
 // --- Recursos iniciales ----------------------------------------------------
 
 export const RECURSOS_INICIALES = {
@@ -176,3 +201,8 @@ export const CASTIGO_FASE_INCOMPLETA = {
 /** Probabilidad semanal de que se levante una carta del mazo de eventos. */
 export const PROBABILIDAD_EVENTO_SEMANAL = 0.16;
 export const ENFRIAMIENTO_EVENTO_SEMANAS = 6;
+
+// --- Gaceta Semanal (GUIA v2.0 seccion 4.B) --------------------------------
+
+/** Cada cuantas semanas se publica un titular de prensa satirica. */
+export const CADENCIA_GACETA_SEMANAS = 2;

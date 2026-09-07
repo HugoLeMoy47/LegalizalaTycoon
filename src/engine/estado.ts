@@ -50,16 +50,24 @@ export function crearEstadoInicial(opciones: OpcionesPartida = {}): GameState {
     estadoJuego: 'JUGANDO',
     nieblaMentalActiva: false,
 
+    // --- v2.0: la partida arranca en la Etapa A (activista solitario) ---
+    firmasRecolectadas: 0,
+    solidezTecnica: SOLIDEZ_TECNICA_INICIAL,
+    colectivoDesbloqueado: false,
+    comisionDesbloqueada: false,
+    onboardingCompletado: false,
+
     semilla,
     cursorAleatorio: semilla,
-    solidezTecnica: SOLIDEZ_TECNICA_INICIAL,
     asignaciones: { INVESTIGAR: 0, MOVILIZAR: 0, CABILDEAR: 0, AUTOCUIDADO: 0 },
     colaComisiones: resto,
     comisionesResueltas: [],
     rutaLegislativa: rutaLegislativaInicial(),
-    sellos: ['TURNADO', 'EN_COMISION'],
+    sellos: [],
     registro: [],
     decisionPendiente: null,
+    hitoPendiente: null,
+    gacetaPendiente: null,
     semanasConsecutivasHorasExtra: 0,
     reporteSemana48: null,
     banderas: {},
@@ -67,14 +75,14 @@ export function crearEstadoInicial(opciones: OpcionesPartida = {}): GameState {
     ultimoTurno: null,
   };
 
-  marcarNodo(estado, 'mesa-municipal', 'APROBADO');
-  if (estado.comisionActiva) marcarNodo(estado, estado.comisionActiva.nodoId, 'ACTIVO');
+  // La iniciativa aún no está turnada: eso ocurre en la semana 6, cuando
+  // Oficialía de Partes la valida (GUIA v2.0, Etapa C).
 
   registrar(
     estado,
     'SISTEMA',
-    'Iniciativa presentada',
-    'La iniciativa ciudadana de Regulación Integral del Cannabis quedó turnada a la Comisión de Gobernación y Reglamentos del Cabildo. Tienes 100 semanas.',
+    'Asumes el mandato',
+    'Arranca la Etapa A: eres una sola persona con 40 horas a la semana. Antes de pisar el Cabildo necesitas juntar 500 firmas ciudadanas y un articulado que aguante revisión jurídica.',
   );
 
   return estado;

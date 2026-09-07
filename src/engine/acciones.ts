@@ -14,12 +14,13 @@ import {
   CASTIGO_MUTILACION_APOYO,
   CONVERSION_APOYO_PRESION,
   COSTO_APOYO_POR_HORA_CABILDEO,
+  FIRMAS_POR_HORA_MOVILIZACION,
   MAX_BLOQUES_HORAS_EXTRA,
   PISO_SATURACION,
   PROBABILIDAD_FRICCION_NIEBLA,
   RENDIMIENTO_POR_HORA,
 } from './balance';
-import { VERBOS, aliadosActivos, lider, presupuestoHorasLider, sellar } from './estado';
+import { VERBOS, aliadosActivos, lider, marcarNodo, presupuestoHorasLider, sellar } from './estado';
 import type {
   GameState,
   Legislador,
@@ -128,6 +129,9 @@ export function quitarHorasExtra(estado: GameState): ResultadoComando {
 // ---------------------------------------------------------------------------
 
 export function reclutar(estado: GameState, miembroId: string): ResultadoComando {
+  if (!estado.colectivoDesbloqueado) {
+    return rechazo(estado, 'Todavía no tienes base social que convenza a nadie de sumarse.');
+  }
   const miembro = estado.colectivo.find((m) => m.id === miembroId);
   if (!miembro) return rechazo(estado, 'Ese perfil no existe.');
   if (miembro.activo) return rechazo(estado, `${miembro.nombre} ya forma parte del colectivo.`);
@@ -180,6 +184,9 @@ function buscarLegislador(
 }
 
 export function cabildearLegislador(estado: GameState, legisladorId: string): ResultadoComando {
+  if (!estado.comisionDesbloqueada) {
+    return rechazo(estado, 'La iniciativa aún no está turnada a comisiones. No hay a quién cabildear.');
+  }
   if (!estado.comisionActiva) return rechazo(estado, 'No hay comisión activa que cabildear.');
   const objetivo = buscarLegislador(estado, legisladorId);
   if (!objetivo) return rechazo(estado, 'Ese legislador no está en la comisión activa.');
@@ -227,6 +234,9 @@ export function cabildearLegislador(estado: GameState, legisladorId: string): Re
 export const CASTIGO_APOYO_COMPRA_VOTO = 4;
 
 export function comprarVoto(estado: GameState, legisladorId: string): ResultadoComando {
+  if (!estado.comisionDesbloqueada) {
+    return rechazo(estado, 'La iniciativa aún no está turnada a comisiones.');
+  }
   if (!estado.comisionActiva) return rechazo(estado, 'No hay comisión activa.');
   const objetivo = buscarLegislador(estado, legisladorId);
   if (!objetivo) return rechazo(estado, 'Ese legislador no está en la comisión activa.');
@@ -260,6 +270,8 @@ export interface RendimientoSemanal {
   presionPolitica: number;
   resistencia: number;
   costoApoyoCabildeo: number;
+  /** Firmas ciudadanas recolectadas esta semana (v2.0, Etapa A). */
+  firmas: number;
   horasTotales: number;
 }
 
@@ -324,6 +336,11 @@ export function calcularRendimiento(estado: GameState): RendimientoSemanal {
         factorSaturacion(estado.recursos.resistencia),
     ),
     costoApoyoCabildeo: redondear(hCabildear * COSTO_APOYO_POR_HORA_CABILDEO),
+    // Las firmas no saturan: una firma es una firma, la junte quien la junte.
+    // Sí escalan con el enlace de base, que es quien abre las asambleas.
+    firmas: Math.round(
+      hMovilizar * FIRMAS_POR_HORA_MOVILIZACION * factorEspecialista(estado, 'MOVILIZAR'),
+    ),
     horasTotales: hInvestigar + hMovilizar + hCabildear + hAutocuidado,
   };
 }
@@ -337,6 +354,7 @@ export function aplicarRendimiento(estado: GameState): RendimientoSemanal {
   );
   estado.recursos.presionPolitica = acotar(estado.recursos.presionPolitica + r.presionPolitica);
   estado.recursos.resistencia = acotar(estado.recursos.resistencia + r.resistencia);
+  estado.firmasRecolectadas += r.firmas;
   return r;
 }
 
@@ -387,14 +405,36 @@ function resolverLeyMutilada(estado: GameState, opcionId: string): void {
   }
 
   estado.iniciativaMutilada = true;
-  if (estado.comisionActiva) estado.comisionActiva.dictamenAprobado = true;
+  const comision = estado.comisionActiva;
+  let alineados = 0;
+
+  if (comision) {
+    // El trato incluye los votos: eso es lo que están vendiendo. Las bancadas
+    // disciplinan a los suyos hasta reunir exactamente lo necesario.
+    //
+    // Sin esto la comisión quedaba con `dictamenAprobado = true` pero sin
+    // votos, y la condición de victoria federal (≥65% en Diputados) se volvía
+    // imposible de cumplir para siempre: el jugador pasaba el Senado y el DOF
+    // se le negaba sin ninguna acción disponible para corregirlo.
+    for (const legislador of comision.legisladores) {
+      const favor = comision.legisladores.filter((l) => l.postura === 'FAVOR').length;
+      if (favor >= comision.votosFavorRequeridos) break;
+      if (legislador.postura !== 'FAVOR') {
+        legislador.postura = 'FAVOR';
+        alineados += 1;
+      }
+    }
+    comision.dictamenAprobado = true;
+    marcarNodo(estado, comision.nodoId, 'APROBADO');
+  }
+
   estado.recursos.apoyoSocial = acotar(estado.recursos.apoyoSocial - CASTIGO_MUTILACION_APOYO);
   sellar(estado, 'DICTAMEN_CON_ENMIENDAS');
   registrar(
     estado,
     'DECISION',
     'Aceptaste el dictamen mutilado',
-    `Se aprueba el dictamen sin el artículo de autocultivo y sin presupuesto de salud pública. La foto oficial sale bien; las bases no. Apoyo Social −${CASTIGO_MUTILACION_APOYO}%.`,
+    `Se aprueba el dictamen sin el artículo de autocultivo y sin presupuesto de salud pública. ${alineados} voto(s) se alinearon de golpe, porque eso era lo que estaban vendiendo. La foto oficial sale bien; las bases no. Apoyo Social −${CASTIGO_MUTILACION_APOYO}%.`,
   );
 }
 

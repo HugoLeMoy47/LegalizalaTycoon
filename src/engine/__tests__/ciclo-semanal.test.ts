@@ -19,13 +19,15 @@ import { simularPartida, verificarCalendarioDeFases } from '../../sim/simulador'
 import { avanzarSemanasEnLaboratorio, estadoSinComision } from './ayudas';
 
 describe('Ciclo semanal — estado inicial', () => {
-  it('arranca en la semana 1, fase municipal y con el expediente turnado', () => {
+  it('arranca en la semana 1, fase municipal y en la Etapa A (sin turnar)', () => {
     const estado = crearEstadoInicial();
     expect(estado.semanaActual).toBe(1);
     expect(estado.faseActual).toBe('MUNICIPAL');
     expect(estado.estadoJuego).toBe('JUGANDO');
     expect(estado.comisionActiva?.id).toBe('com-gobernacion');
-    expect(estado.sellos).toContain('EN_COMISION');
+    // v2.0: el expediente no se sella hasta la semana 6 (Oficialia de Partes).
+    expect(estado.sellos).toEqual([]);
+    expect(estado.comisionDesbloqueada).toBe(false);
     expect(estado.nieblaMentalActiva).toBe(false);
   });
 

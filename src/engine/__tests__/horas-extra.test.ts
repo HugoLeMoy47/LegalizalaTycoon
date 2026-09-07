@@ -120,8 +120,11 @@ describe('Horas extra — detonación de la Niebla Mental', () => {
     const resultado = simularPartida(LIDER_MARTIR, { semilla: 20260906 });
     expect(resultado.desenlace).toBe('DERROTA_BURNOUT');
     expect(resultado.estadoFinal.recursos.resistencia).toBe(0);
-    expect(resultado.estadoFinal.colectivo.filter((m) => m.rol !== 'LIDER' && m.activo)).toHaveLength(
-      0,
+    // v2.0: la abogada llega sola en la semana 4; lo que el martir nunca hizo
+    // fue reclutar al resto ni delegarles una sola hora.
+    const reclutadosPorElJugador = resultado.estadoFinal.colectivo.filter(
+      (m) => m.activo && (m.rol === 'VOCERO' || m.rol === 'ENLACE_BASE'),
     );
+    expect(reclutadosPorElJugador).toHaveLength(0);
   });
 });

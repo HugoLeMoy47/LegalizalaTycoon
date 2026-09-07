@@ -133,6 +133,6 @@ describe('Espejo del historial normativo', () => {
       estado = ejecutarComando(estado, { tipo: 'AVANZAR_SEMANA' }).estado;
     }
     expect(estado.historialEventos).toHaveLength(estado.registro.length);
-    expect(estado.historialEventos[0]).toContain('Iniciativa presentada');
+    expect(estado.historialEventos[0]).toContain('Asumes el mandato');
   });
 });

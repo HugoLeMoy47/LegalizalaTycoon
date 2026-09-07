@@ -111,24 +111,99 @@ export const EVENT_DECK: CartaEvento[] = [
   },
 ];
 
-/** Titulares de gaceta que dan color a la semana sin efecto mecanico. */
+// ---------------------------------------------------------------------------
+// Gaceta Semanal — retorica de medios (GUIA v2.0 seccion 4.B)
+// ---------------------------------------------------------------------------
+
+/** Cabeceras ficticias que "publican" los titulares. */
+export const MEDIOS_FICTICIOS: string[] = [
+  'El Heraldo de Provincia',
+  'La Jornada Municipal',
+  'Reforma Local · Sección Política',
+  'Boletín de la Gaceta Parlamentaria',
+  'El Universal del Estado',
+];
+
+/**
+ * Catalogo de titulares satiricos por fase. Sin efecto mecanico: son retorica
+ * de medios, el folclor de la politica mexicana que enmarca lo que el jugador
+ * acaba de hacer.
+ */
 export const TITULARES_GACETA: Record<FaseJuego, string[]> = {
   MUNICIPAL: [
+    'Regidores del Cabildo solicitan receso de 3 horas para desayunar barbacoa en sesión clave.',
+    'Policía municipal asegura medio cigarrillo artesanal en parque público y lo reporta como "desarticulación de punto de distribución".',
+    'Comerciantes locales muestran simpatía con el colectivo ciudadano tras hartazgo por cobro de piso policial.',
+    'El Presidente Municipal declara que "la moral de las familias no se negocia" antes de revisar el borrador de la iniciativa.',
     'Cabildo aprueba por unanimidad la remodelación de la glorieta; el reglamento sigue en carpeta.',
     'Regidores piden "más análisis" antes de tocar el Bando de Policía y Gobierno.',
-    'Colectivos vecinales instalan mesa informativa en el jardín principal.',
-    'El presidente municipal se declara "abierto al diálogo" ante las cámaras.',
   ],
   ESTATAL: [
+    'Diputado del Movimiento de la Deformación se queda dormido en votación de comisión; su asesor levanta la mano por él.',
+    'Bancada de Tradición y Orden exige estudios teológicos y de impacto familiar antes de dictaminar.',
+    'Granja de bots gubernamentales satura redes del colectivo con acusaciones de financiamiento extranjero.',
+    'Comisión de Puntos Constitucionales convoca a "Foro de Parlamento Abierto" pero solo invita a ponentes afines al oficialismo.',
     'La Comisión de Salud agenda el punto y lo baja en la misma sesión.',
-    'Editorial local: "¿Legislar sobre cannabis o legislar sobre miedo?".',
-    'Diputados locales viajan a un foro de tres días sobre buenas prácticas parlamentarias.',
     'La gaceta publica el turno a comisiones con dos semanas de retraso.',
   ],
   FEDERAL: [
-    'San Lázaro: la agenda del periodo se llena de reformas fiscales de última hora.',
+    'Senadores del Frente Institucional negocian el dictamen en restaurante de cortes caros de Polanco.',
+    'El Partido Ecologista anuncia que votará a favor… si se añade un subsidio de hidroponía para sus empresas familiares.',
+    'Mesa Directiva de San Lázaro aplica "chicanada parlamentaria" y congela el dictamen en el último minuto de la sesión.',
+    'Diario Oficial de la Federación publica fe de erratas que misteriosamente omitía el artículo de despenalización.',
     'El Senado anuncia parlamento abierto y lo programa a las 9:00 de un viernes.',
     'La Suprema Corte vuelve a recordar al Congreso su omisión legislativa.',
-    'Columnistas apuestan a que el dictamen "duerme el sueño de los justos".',
   ],
 };
+
+// ---------------------------------------------------------------------------
+// Tarjetas informativas contextuales (GUIA v2.0 seccion 4.C)
+// ---------------------------------------------------------------------------
+
+/** Descripcion breve de cada bancada, para el tooltip de las tarjetas. */
+export const TOOLTIP_BANCADA: Record<string, string> = {
+  DEFORMACION: 'Mayoría oficialista. Si la iniciativa no la propuso el líder moral, no existe.',
+  TRADICION_Y_ORDEN: 'Conservadurismo doctrinario. Todo cambio es una amenaza civilizatoria.',
+  FRENTE_INSTITUCIONAL:
+    'Dinosaurios del trámite. Te congelan la ley con una sonrisa y una cita al reglamento de 1934.',
+  ECOLOGISTA: 'Votos en renta. Buscan concesiones comerciales o presupuesto satélite.',
+};
+
+/** Glosario parlamentario para los tooltips de conceptos. */
+export const GLOSARIO: Record<string, string> = {
+  CONGELADORA:
+    'Práctica no oficial donde una comisión deja vencer los plazos de dictaminación para desechar la ley sin votar en contra.',
+  OFICIALIA_DE_PARTES:
+    'Ventanilla burocrática obligatoria para registrar formalmente documentos ante el Poder Legislativo.',
+  DICTAMEN:
+    'Resolución que una comisión emite sobre una iniciativa. Sin dictamen, el asunto no puede llegar al Pleno.',
+  PLENO:
+    'Sesión de todas y todos los legisladores. Aquí se vota el dictamen que la comisión ya aprobó.',
+  QUORUM:
+    'Número mínimo de legisladores presentes para que la sesión sea válida. Romperlo a propósito es una táctica de bloqueo.',
+  SOLIDEZ_TECNICA:
+    'Calidad jurídica de tu articulado. Si no alcanza el mínimo de la comisión, te devuelven el dictamen aunque tengas los votos.',
+  FIRMAS:
+    'El Art. 71 frac. IV exige respaldo ciudadano verificable antes de que una iniciativa pueda presentarse formalmente.',
+};
+
+// ---------------------------------------------------------------------------
+// Prologo narrativo — El Incidente Incitador (GUIA v2.0 seccion 2)
+// ---------------------------------------------------------------------------
+
+export const PROLOGO = {
+  expediente: 'EXP-2026/089-CDMX',
+  estado: 'CASO ACTIVO / RETENCIÓN ILEGAL',
+  hechos:
+    'Anoche, elementos de la policía municipal interceptaron a Gael, un joven estudiante de 21 años de tu comunidad, portando 6 gramos de cannabis para uso personal.',
+  extorsion:
+    'Exigen una mordida de $25,000 MXN para no turnarlo al Ministerio Público bajo cargos de narcomenudeo con prisión preventiva oficiosa. La familia está desesperada.',
+  epifania:
+    'Pagar fianzas o manifestarse un fin de semana ya no es suficiente. Mañana detendrán a alguien más. La única forma de frenar la extorsión institucional es cambiar la ley desde su raíz.',
+  mandato:
+    'Activarás el mecanismo del ARTÍCULO 71 FRACCIÓN IV CONSTITUCIONAL: presentar una INICIATIVA CIUDADANA para regular integralmente la causa.',
+  reloj:
+    'Cuentas con una legislatura estricta de 100 SEMANAS. Si no logras la promulgación en el Diario Oficial de la Federación antes de que termine el periodo, la iniciativa morirá en la "Congeladora" y todo el esfuerzo será borrado.',
+  pregunta: '¿Cuidarás a tu gente y tu salud mental, o te devorará el sistema?',
+  boton: 'Asumir el mandato',
+} as const;
