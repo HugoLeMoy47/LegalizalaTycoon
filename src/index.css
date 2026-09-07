@@ -1,0 +1,166 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  /* `min-height` y no `height`: con altura fija el documento no repinta bien
+     al hacer scroll sobre el mapa de nodos. */
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
+  body {
+    @apply bg-pizarra-900 text-slate-200 font-cuerpo antialiased;
+    /* Trama sutil de tablero táctico. */
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.016) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.016) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-pizarra-900;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-pizarra-600 rounded;
+  }
+}
+
+@layer components {
+  /* --- Tarjetas del War Room ------------------------------------------- */
+  .panel {
+    @apply rounded-lg border border-pizarra-600/70 bg-pizarra-800/80 shadow-lg shadow-black/30;
+  }
+
+  .panel-titulo {
+    @apply flex items-center gap-2 border-b border-pizarra-600/70 px-4 py-2.5
+           font-tactica text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400;
+  }
+
+  .boton {
+    @apply inline-flex items-center justify-center gap-1.5 rounded border border-pizarra-500
+           bg-pizarra-700 px-3 py-1.5 font-tactica text-xs font-medium text-slate-200
+           transition hover:border-olivo-400 hover:bg-pizarra-600
+           disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:border-pizarra-500
+           disabled:hover:bg-pizarra-700;
+  }
+
+  .boton-primario {
+    @apply border-olivo-500 bg-olivo-600 text-papel-100 hover:border-olivo-400 hover:bg-olivo-500;
+  }
+
+  .boton-peligro {
+    @apply border-opositor/70 bg-opositor/20 text-opositor hover:border-opositor hover:bg-opositor/30;
+  }
+
+  .etiqueta {
+    @apply font-tactica text-[10px] uppercase tracking-[0.16em] text-slate-500;
+  }
+
+  /* --- Expediente físico ----------------------------------------------- */
+  .carpeta {
+    @apply rounded-sm text-pizarra-900;
+    background-color: #e8dcc0;
+    background-image:
+      repeating-linear-gradient(
+        0deg,
+        rgba(120, 100, 60, 0.05) 0px,
+        rgba(120, 100, 60, 0.05) 1px,
+        transparent 1px,
+        transparent 26px
+      ),
+      radial-gradient(circle at 18% 12%, rgba(140, 115, 70, 0.14), transparent 55%),
+      radial-gradient(circle at 82% 88%, rgba(140, 115, 70, 0.12), transparent 50%);
+    box-shadow:
+      inset 0 0 60px rgba(120, 95, 55, 0.22),
+      0 10px 30px rgba(0, 0, 0, 0.45);
+  }
+
+  /*
+   * Sellos burocráticos 100% procedimentales (Bitácora #010): tipografía
+   * desgastada + borde doble + rotación. Sin imágenes, sin peso de bundle.
+   */
+  .sello {
+    @apply relative inline-flex items-center justify-center border-[3px] px-3 py-1
+           font-oficial text-[13px] uppercase tracking-[0.12em];
+    border-radius: 3px;
+    opacity: 0.82;
+    mix-blend-mode: multiply;
+    text-shadow: 0 0 1px currentColor;
+  }
+
+  .sello::after {
+    content: '';
+    @apply pointer-events-none absolute inset-[2px] border;
+    border-color: currentColor;
+    opacity: 0.45;
+    border-radius: 2px;
+  }
+
+  .sello-tinta-roja {
+    color: #a02334;
+    border-color: #a02334;
+  }
+  .sello-tinta-azul {
+    color: #1d3f7a;
+    border-color: #1d3f7a;
+  }
+  .sello-tinta-verde {
+    color: #2f5d3a;
+    border-color: #2f5d3a;
+  }
+
+  /* --- Niebla mental ---------------------------------------------------- */
+  .niebla-vineta {
+    @apply pointer-events-none fixed inset-0 z-40;
+    background: radial-gradient(
+      ellipse at center,
+      transparent 32%,
+      rgba(5, 8, 14, 0.55) 68%,
+      rgba(3, 5, 9, 0.92) 100%
+    );
+    transition: opacity 900ms ease;
+  }
+
+  .pensamiento-intrusivo {
+    @apply pointer-events-none fixed z-50 max-w-[15rem] font-oficial text-[13px]
+           leading-snug text-opositor/80;
+    text-shadow: 0 0 12px rgba(0, 0, 0, 0.9);
+  }
+}
+
+@layer utilities {
+  .texto-desenfocado {
+    filter: blur(0.35px);
+  }
+
+  .franja-diagonal {
+    background-image: repeating-linear-gradient(
+      45deg,
+      rgba(224, 122, 59, 0.12) 0px,
+      rgba(224, 122, 59, 0.12) 8px,
+      transparent 8px,
+      transparent 16px
+    );
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,87 @@
+LICENCIA DE CONTENIDO
+Creative Commons Atribución-NoComercial-CompartirIgual 4.0 Internacional
+(CC BY-NC-SA 4.0)
+
+Copyright (c) 2026 Hugo Legorreta
+
+═══════════════════════════════════════════════════════════════════════════════
+ALCANCE
+═══════════════════════════════════════════════════════════════════════════════
+
+Esta licencia cubre el CONTENIDO de diseño de juego, narrativa y documentación
+pedagógica de este repositorio:
+
+  · Todo el directorio `docs/` (Game Design Document, guía técnica de diseño,
+    bitácora de decisiones, pitch deck y documento de arquitectura).
+  · Los textos narrativos del juego: nombres y perfiles de las bancadas
+    satíricas, nombres y fichas de legisladores y del colectivo, cartas del
+    Event Deck, titulares de gaceta, pensamientos intrusivos, textos de los
+    dilemas éticos y de las pantallas de desenlace.
+  · Los modelos matemáticos de balanceo en tanto diseño de juego, la estructura
+    pedagógica de triple dimensión y el marco de retórica procedimental aplicado.
+  · Este README y los materiales de comunicación del proyecto.
+
+El CÓDIGO FUENTE que implementa lo anterior se distribuye bajo licencia MIT.
+Ver el archivo LICENSE.
+
+═══════════════════════════════════════════════════════════════════════════════
+RESUMEN LEGIBLE (no sustituye a la licencia)
+═══════════════════════════════════════════════════════════════════════════════
+
+Usted es libre de:
+
+  COMPARTIR — copiar y redistribuir el material en cualquier medio o formato.
+  ADAPTAR   — remezclar, transformar y construir a partir del material.
+
+El licenciante no puede revocar estas libertades mientras usted cumpla los
+términos de la licencia.
+
+Bajo los siguientes términos:
+
+  ATRIBUCIÓN (BY)
+  Debe dar crédito de manera adecuada, brindar un enlace a la licencia e indicar
+  si se han realizado cambios. Puede hacerlo en cualquier forma razonable, pero
+  no de forma tal que sugiera que usted o su uso tienen el apoyo del licenciante.
+
+  NO COMERCIAL (NC)
+  No puede hacer uso del material con propósitos comerciales.
+
+  COMPARTIR IGUAL (SA)
+  Si remezcla, transforma o crea a partir del material, debe distribuir su
+  contribución bajo la misma licencia del original.
+
+No hay restricciones adicionales: no puede aplicar términos legales ni medidas
+tecnológicas que restrinjan legalmente a otras personas a hacer cualquier uso
+permitido por la licencia.
+
+═══════════════════════════════════════════════════════════════════════════════
+USO EDUCATIVO
+═══════════════════════════════════════════════════════════════════════════════
+
+El uso en aulas universitarias, talleres de organizaciones de la sociedad civil,
+colectivos ciudadanos y actividades de formación cívica sin fines de lucro está
+expresamente contemplado y alentado por esta licencia, con la sola condición de
+dar atribución al proyecto.
+
+Para usos comerciales (capacitación corporativa de paga, distribución en tiendas
+digitales, licenciamiento institucional con contraprestación) es necesario
+solicitar autorización específica al titular de los derechos.
+
+═══════════════════════════════════════════════════════════════════════════════
+TEXTO COMPLETO DE LA LICENCIA
+═══════════════════════════════════════════════════════════════════════════════
+
+El texto legal íntegro y vinculante de CC BY-NC-SA 4.0 está disponible en:
+
+  https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode.es
+  https://creativecommons.org/licenses/by-nc-sa/4.0/deed.es
+
+═══════════════════════════════════════════════════════════════════════════════
+NOTA SOBRE LAS BANCADAS POLÍTICAS
+═══════════════════════════════════════════════════════════════════════════════
+
+Los partidos políticos que aparecen en esta obra (Movimiento de la Deformación,
+Partido Tradición y Orden, Frente Institucional del Poder y Partido Ecologista
+Pragmático) son parodias ficticias. No representan a organizaciones políticas
+reales ni a personas reales; los legisladores son personajes inventados. La
+sátira apunta a prácticas parlamentarias documentadas, no a militancias.

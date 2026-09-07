@@ -1,0 +1,58 @@
+name: 🏛️ Fidelidad institucional
+description: Algo del modelo legislativo simulado no corresponde con el proceso real.
+title: '[Fidelidad]: '
+labels: ['fidelidad-institucional', 'documentación']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Esta es la contribución más valiosa que puede recibir un juego educativo.
+        Si conoces el proceso legislativo mexicano y algo del modelo te parece
+        impreciso, cuéntanoslo con la referencia.
+
+  - type: dropdown
+    id: orden
+    attributes:
+      label: Orden de gobierno
+      options:
+        - Municipal (cabildo, bando de policía y gobierno)
+        - Estatal (congreso local)
+        - Federal (Congreso de la Unión, bicameral)
+        - Transversal
+    validations:
+      required: true
+
+  - type: textarea
+    id: modelo-actual
+    attributes:
+      label: Qué hace el juego hoy
+      description: Mecánica, texto o dato tal como está implementado.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proceso-real
+    attributes:
+      label: Cómo funciona en realidad
+      description: Descripción del procedimiento real correspondiente.
+    validations:
+      required: true
+
+  - type: textarea
+    id: fundamento
+    attributes:
+      label: Fundamento
+      description: >-
+        Artículo constitucional, ley orgánica, reglamento de la cámara,
+        precedente documentado o fuente periodística verificable.
+      placeholder: 'Ej.: Art. 89 del Reglamento de la Cámara de Diputados; caso X (2019)'
+    validations:
+      required: true
+
+  - type: textarea
+    id: propuesta
+    attributes:
+      label: Cómo lo traducirías a mecánica
+      description: >-
+        Opcional pero muy útil. El juego enseña con reglas, no con textos: ¿qué
+        regla capturaría este procedimiento?

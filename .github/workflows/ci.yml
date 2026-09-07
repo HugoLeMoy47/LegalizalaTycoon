@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    name: Lint, tipos, pruebas y build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clonar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Preparar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Verificación de tipos
+        run: npx tsc -b
+
+      - name: Pruebas del Core Engine
+        run: npm run test
+
+      # El motor es TypeScript puro: las 100 semanas se simulan en la CI sin
+      # navegador. Si el balanceo se rompe, se ve aquí.
+      - name: Simulación headless de 100 semanas
+        run: npm run sim:matriz
+
+      - name: Build de producción
+        run: npm run build
+
+      - name: Publicar artefacto de build
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 7

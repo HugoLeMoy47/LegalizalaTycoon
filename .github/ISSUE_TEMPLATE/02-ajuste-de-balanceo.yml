@@ -1,0 +1,60 @@
+name: ⚖️ Ajuste de balanceo
+description: El juego es demasiado fácil, imposible, o una mecánica no transmite su lección.
+title: '[Balanceo]: '
+labels: ['balanceo', 'diseño']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        El balanceo de este proyecto se discute con datos. Antes de abrir el issue,
+        corre `npm run sim:matriz` y pega la salida: es la evidencia de partida.
+
+  - type: dropdown
+    id: fase
+    attributes:
+      label: Fase afectada
+      options:
+        - Municipal (semanas 1-30)
+        - Estatal (semanas 31-65)
+        - Federal (semanas 66-100)
+        - Transversal / toda la partida
+    validations:
+      required: true
+
+  - type: textarea
+    id: problema
+    attributes:
+      label: Qué se siente mal
+      description: >-
+        Describe la experiencia, no la fórmula. Ej.: "la fase federal se gana sin
+        tener que delegar, así que la lección del colectivo no se transmite".
+    validations:
+      required: true
+
+  - type: textarea
+    id: simulacion
+    attributes:
+      label: Salida de `npm run sim:matriz`
+      description: Los cuatro arquetipos y sus desenlaces con tu configuración actual.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: propuesta
+    attributes:
+      label: Propuesta de ajuste
+      description: >-
+        Qué constante de `src/engine/balance.ts` tocarías y por qué. Si ya la
+        probaste, pega la salida de `sim:matriz` después del cambio.
+
+  - type: checkboxes
+    id: pedagogia
+    attributes:
+      label: Verificación pedagógica
+      description: >-
+        El criterio del proyecto es que cada arquetipo llegue a su desenlace propio.
+      options:
+        - label: Con mi propuesta, el estratega colectivo sigue pudiendo ganar.
+        - label: Con mi propuesta, el líder mártir sigue terminando en burnout.
+        - label: Con mi propuesta, el observador pasivo sigue cayendo a la congeladora.

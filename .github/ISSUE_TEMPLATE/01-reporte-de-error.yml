@@ -1,0 +1,64 @@
+name: 🐞 Reporte de error
+description: Algo del motor o de la interfaz no se comporta como debería.
+title: '[Error]: '
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por reportar. Si el problema es de **balanceo** (el juego es
+        demasiado fácil o imposible) usa mejor la plantilla de *Ajuste de balanceo*.
+
+  - type: dropdown
+    id: capa
+    attributes:
+      label: ¿Dónde ocurre?
+      options:
+        - Core Engine (reglas, cálculos, desenlaces)
+        - Interfaz War Room (visual, controles)
+        - Simulación headless (npm run sim)
+        - No estoy seguro
+    validations:
+      required: true
+
+  - type: textarea
+    id: descripcion
+    attributes:
+      label: Qué pasó
+      description: Descripción de lo observado y de lo que esperabas.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduccion
+    attributes:
+      label: Cómo reproducirlo
+      placeholder: |
+        1. Semana X, fase Y
+        2. Asigné N horas a...
+        3. Al avanzar la semana...
+    validations:
+      required: true
+
+  - type: input
+    id: semilla
+    attributes:
+      label: Semilla de la partida
+      description: >-
+        Visible en el expediente físico (número de expediente) o en `estado.semilla`.
+        Con la semilla la partida es reproducible exactamente.
+
+  - type: textarea
+    id: estado
+    attributes:
+      label: Estado guardado (opcional)
+      description: >-
+        Contenido de `localStorage` bajo la clave `iniciativa-ciudadana:partida:v1`.
+        Se formatea automáticamente como JSON.
+      render: json
+
+  - type: input
+    id: entorno
+    attributes:
+      label: Entorno
+      placeholder: 'Chrome 141 / Windows 11 / Node 20.11'
