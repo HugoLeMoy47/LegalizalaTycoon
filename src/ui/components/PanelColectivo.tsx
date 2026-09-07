@@ -110,7 +110,7 @@ function FichaAliadoActivo({
         <button
           type="button"
           onClick={() => cambiarVerbo(null)}
-          className={`rounded border px-2 py-0.5 font-tactica text-[10px] transition ${
+          className={`boton-tactil rounded border px-2.5 py-0.5 font-tactica text-[10px] transition ${
             miembro.verboAsignado === null
               ? 'border-slate-500 bg-pizarra-600 text-slate-200'
               : 'border-pizarra-600 text-slate-500 hover:border-slate-500'
@@ -123,7 +123,7 @@ function FichaAliadoActivo({
             key={verbo}
             type="button"
             onClick={() => cambiarVerbo(verbo)}
-            className={`rounded border px-2 py-0.5 font-tactica text-[10px] transition ${
+            className={`boton-tactil rounded border px-2.5 py-0.5 font-tactica text-[10px] transition ${
               miembro.verboAsignado === verbo
                 ? 'border-olivo-400 bg-olivo-600/40 text-papel-100'
                 : 'border-pizarra-600 text-slate-500 hover:border-olivo-400 hover:text-slate-300'
@@ -173,7 +173,7 @@ function FichaReclutable({
 
         <button
           type="button"
-          className="boton boton-primario shrink-0"
+          className="boton boton-primario boton-tactil shrink-0"
           disabled={!apoyoOk || !fondosOk}
           onClick={() => despachar({ tipo: 'RECLUTAR', miembroId: miembro.id })}
         >

@@ -80,7 +80,7 @@ export function PanelHoras({ estado, despachar }: Props) {
                 <div className="flex shrink-0 items-center gap-1">
                   <button
                     type="button"
-                    className="boton px-2 py-1"
+                    className="boton boton-tactil px-2 py-1"
                     onClick={() => ajustar(verbo, -PASO_HORAS)}
                     disabled={enDescanso || horas <= 0}
                     aria-label={`Quitar horas a ${ETIQUETA_VERBO[verbo]}`}
@@ -92,7 +92,7 @@ export function PanelHoras({ estado, despachar }: Props) {
                   </span>
                   <button
                     type="button"
-                    className="boton px-2 py-1"
+                    className="boton boton-tactil px-2 py-1"
                     onClick={() => ajustar(verbo, PASO_HORAS)}
                     disabled={enDescanso || disponibles < PASO_HORAS}
                     aria-label={`Añadir horas a ${ETIQUETA_VERBO[verbo]}`}
@@ -138,7 +138,7 @@ export function PanelHoras({ estado, despachar }: Props) {
           <div className="flex shrink-0 items-center gap-1">
             <button
               type="button"
-              className="boton px-2 py-1"
+              className="boton boton-tactil px-2 py-1"
               onClick={() => despachar({ tipo: 'QUITAR_HORAS_EXTRA' })}
               disabled={bloquesExtra <= 0}
               aria-label="Quitar un bloque de horas extra"
@@ -150,7 +150,7 @@ export function PanelHoras({ estado, despachar }: Props) {
             </span>
             <button
               type="button"
-              className={`boton boton-peligro px-2 py-1 ${
+              className={`boton boton-peligro boton-tactil px-2 py-1 ${
                 bloquesExtra < MAX_BLOQUES_HORAS_EXTRA && !enDescanso ? 'animate-pulso-rojo' : ''
               }`}
               onClick={() => despachar({ tipo: 'METER_HORAS_EXTRA' })}

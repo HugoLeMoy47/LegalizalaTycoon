@@ -5,26 +5,32 @@
  * y despacha comandos al Core Engine (principio de Lógica Pura Desacoplada,
  * GUIA sección 1 y Bitácora #010).
  *
- * Orden de aparición en la v2.0:
- *   Prólogo (Gael) → Wizard de onboarding → War Room
- *   y, durante la partida: hitos de desbloqueo, dilemas, gaceta y transiciones.
+ * Dos composiciones sobre los mismos componentes:
+ *
+ * · Escritorio (≥1280 px): página con scroll y tres columnas.
+ * · Móvil: app shell de altura fija — cabecera y barra de acción siempre
+ *   visibles, y solo el contenido central se desplaza. La auditoría en 375 px
+ *   medía 3 593 px de scroll por turno con el botón de avanzar semana hasta
+ *   el fondo; el juego se diseñó para jugarse principalmente en el teléfono.
  */
 
+import { useCallback, useEffect, useState } from 'react';
 import { ChevronRight, GraduationCap, Info, RotateCcw, Target, Volume2, VolumeX } from 'lucide-react';
-import { useState } from 'react';
 
 import {
   GLOSARIO,
   META_FIRMAS,
   SEMANAS_TOTALES,
   checklistVictoria,
+  pasosDelTurno,
   type ComandoJuego,
   type GameState,
 } from '../engine';
 import { alternarSilencio, estaSilenciado } from './audio/sello';
 import { Bitacora } from './components/Bitacora';
-import { Dashboard } from './components/Dashboard';
+import { Dashboard, DashboardCompacto } from './components/Dashboard';
 import { GacetaPopup } from './components/GacetaPopup';
+import { GuiaTurno } from './components/GuiaTurno';
 import { HitoModal } from './components/HitoModal';
 import { ModalDecision } from './components/ModalDecision';
 import { NieblaMental } from './components/NieblaMental';
@@ -32,16 +38,29 @@ import { PanelColectivo } from './components/PanelColectivo';
 import { PanelComisiones } from './components/PanelComisiones';
 import { PanelHoras } from './components/PanelHoras';
 import { PantallaDesenlace } from './components/PantallaDesenlace';
+import { PestanasMovil, type PestanaMovil } from './components/PestanasMovil';
 import { PrologoModal } from './components/PrologoModal';
 import { ReporteSemana48 } from './components/ReporteSemana48';
 import { Tooltip } from './components/Tooltip';
 import { TransicionSemana } from './components/TransicionSemana';
 import { VistaDual } from './components/VistaDual';
 import { WizardOnboarding } from './components/WizardOnboarding';
+import { useEsMovil } from './hooks/useEsMovil';
 import { useJuego } from './hooks/useJuego';
+
+/** En móvil cada objetivo del tutorial vive en una pestaña distinta. */
+const PESTANA_DEL_TUTORIAL: Record<string, PestanaMovil | null> = {
+  triada: null, // vive en la cabecera fija
+  horas: 'OPERACION',
+  'vista-dual': 'EXPEDIENTE',
+  avanzar: null, // vive en la barra de acción fija
+};
 
 export function App() {
   const juego = useJuego();
+  const esMovil = useEsMovil();
+  const [pestana, setPestana] = useState<PestanaMovil>('OPERACION');
+
   const {
     estado,
     despachar,
@@ -62,55 +81,31 @@ export function App() {
     estado.estadoJuego === 'DESCANSO_FORZADO_SEM_48' &&
     estado.reporteSemana48?.semanaEmision === estado.semanaActual;
 
-  // El prólogo va antes que todo; el wizard, en cuanto se asume el mandato.
   const mostrarPrologo = !prologoVisto;
   const mostrarWizard = prologoVisto && !tutorialVisto && enJuego;
 
-  return (
-    <div className="relative min-h-screen">
-      <NieblaMental estado={estado} />
+  // El tutorial cambia de pestaña por el jugador para que el objetivo exista.
+  const alCambiarPasoTutorial = useCallback(
+    (objetivo: string) => {
+      const destino = PESTANA_DEL_TUTORIAL[objetivo];
+      if (destino) setPestana(destino);
+    },
+    [],
+  );
 
-      <div
-        className={`relative z-10 mx-auto max-w-[1500px] px-3 py-4 sm:px-5 ${
-          estado.nieblaMentalActiva ? 'texto-desenfocado' : ''
-        }`}
-      >
-        <BarraSuperior reiniciar={reiniciar} repetirTutorial={repetirTutorial} />
+  // Si la comisión se bloquea o desbloquea, no dejes al jugador en una pestaña
+  // que ya no tiene sentido.
+  useEffect(() => {
+    if (pestana === 'COMISION' && !estado.comisionDesbloqueada) setPestana('OPERACION');
+  }, [pestana, estado.comisionDesbloqueada]);
 
-        <div className="mt-3 space-y-3">
-          <Dashboard estado={estado} />
+  const pasos = pasosDelTurno(estado);
+  const pendientes: PestanaMovil[] = [];
+  if (pasos[0].disponible && !pasos[0].hecho) pendientes.push('OPERACION');
+  if (pasos[1].disponible && !pasos[1].hecho) pendientes.push('COMISION');
 
-          {/* Progresión legislativa dual: a todo lo ancho, el mapa de nodos
-              y el expediente necesitan espacio para leerse. */}
-          <VistaDual estado={estado} />
-
-          <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)_minmax(0,1fr)]">
-            {/* Columna 1 — operación semanal */}
-            <div className="space-y-3">
-              <PanelHoras estado={estado} despachar={despachar} />
-              <PanelColectivo estado={estado} despachar={despachar} />
-            </div>
-
-            {/* Columna 2 — comisión activa y semáforo parlamentario */}
-            <PanelComisiones estado={estado} despachar={despachar} />
-
-            {/* Columna 3 — inteligencia */}
-            <div className="space-y-3">
-              <PanelObjetivo estado={estado} />
-              <Bitacora estado={estado} />
-            </div>
-          </div>
-
-          <BarraAvanzar
-            estado={estado}
-            despachar={despachar}
-            enJuego={enJuego}
-            bloqueado={bloqueado}
-          />
-        </div>
-      </div>
-
-      {/* Capas superpuestas, de menos a más prioritaria */}
+  const capas = (
+    <>
       {transicion && (
         <TransicionSemana
           key={transicion.semanaEntrante}
@@ -145,11 +140,12 @@ export function App() {
           }}
         />
       )}
-      {mostrarWizard && <WizardOnboarding onTerminar={terminarTutorial} />}
+      {mostrarWizard && (
+        <WizardOnboarding onTerminar={terminarTutorial} onObjetivo={alCambiarPasoTutorial} />
+      )}
       {mostrarPrologo && <PrologoModal onAsumir={asumirMandato} />}
 
-      {/* Avisos de comandos rechazados */}
-      <div className="pointer-events-none fixed bottom-4 left-1/2 z-[65] w-full max-w-md -translate-x-1/2 space-y-2 px-4">
+      <div className="pointer-events-none fixed bottom-24 left-1/2 z-[65] w-full max-w-md -translate-x-1/2 space-y-2 px-4 xl:bottom-4">
         {avisos.map((aviso) => (
           <p
             key={aviso.id}
@@ -160,6 +156,97 @@ export function App() {
           </p>
         ))}
       </div>
+    </>
+  );
+
+  if (esMovil) {
+    return (
+      <div className="relative">
+        <NieblaMental estado={estado} />
+
+        <div
+          className={`flex h-dvh flex-col ${estado.nieblaMentalActiva ? 'texto-desenfocado' : ''}`}
+        >
+          <div className="relative z-20 shrink-0">
+            <BarraSuperior compacta reiniciar={reiniciar} repetirTutorial={repetirTutorial} />
+            <DashboardCompacto estado={estado} />
+            <PestanasMovil activa={pestana} onCambiar={setPestana} conPendiente={pendientes} />
+          </div>
+
+          <main className="relative z-10 min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
+            {pestana === 'OPERACION' && (
+              <>
+                <PanelHoras estado={estado} despachar={despachar} />
+                <PanelColectivo estado={estado} despachar={despachar} />
+              </>
+            )}
+            {pestana === 'COMISION' && <PanelComisiones estado={estado} despachar={despachar} />}
+            {pestana === 'EXPEDIENTE' && <VistaDual estado={estado} />}
+            {pestana === 'BITACORA' && (
+              <>
+                <PanelObjetivo estado={estado} />
+                <Bitacora estado={estado} />
+              </>
+            )}
+          </main>
+
+          <div className="relative z-20 shrink-0 border-t border-pizarra-600/70 bg-pizarra-800/95 px-3 py-2">
+            <GuiaTurno estado={estado} compacta />
+            <BarraAvanzar
+              estado={estado}
+              despachar={despachar}
+              enJuego={enJuego}
+              bloqueado={bloqueado}
+              compacta
+            />
+          </div>
+        </div>
+
+        {capas}
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative min-h-screen">
+      <NieblaMental estado={estado} />
+
+      <div
+        className={`relative z-10 mx-auto max-w-[1500px] px-3 py-4 sm:px-5 ${
+          estado.nieblaMentalActiva ? 'texto-desenfocado' : ''
+        }`}
+      >
+        <BarraSuperior reiniciar={reiniciar} repetirTutorial={repetirTutorial} />
+
+        <div className="mt-3 space-y-3">
+          <Dashboard estado={estado} />
+          <GuiaTurno estado={estado} />
+          <VistaDual estado={estado} />
+
+          <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)_minmax(0,1fr)]">
+            <div className="space-y-3">
+              <PanelHoras estado={estado} despachar={despachar} />
+              <PanelColectivo estado={estado} despachar={despachar} />
+            </div>
+
+            <PanelComisiones estado={estado} despachar={despachar} />
+
+            <div className="space-y-3">
+              <PanelObjetivo estado={estado} />
+              <Bitacora estado={estado} />
+            </div>
+          </div>
+
+          <BarraAvanzar
+            estado={estado}
+            despachar={despachar}
+            enJuego={enJuego}
+            bloqueado={bloqueado}
+          />
+        </div>
+      </div>
+
+      {capas}
     </div>
   );
 }
@@ -167,11 +254,65 @@ export function App() {
 function BarraSuperior({
   reiniciar,
   repetirTutorial,
+  compacta = false,
 }: {
   reiniciar: () => void;
   repetirTutorial: () => void;
+  compacta?: boolean;
 }) {
   const [silenciado, setSilenciado] = useState(() => estaSilenciado());
+
+  const acciones = (
+    <div className="flex items-center gap-1.5">
+      <button
+        type="button"
+        className="boton boton-tactil"
+        onClick={() => setSilenciado(alternarSilencio())}
+        aria-pressed={silenciado}
+        title={silenciado ? 'Activar sonido' : 'Silenciar'}
+      >
+        {silenciado ? (
+          <VolumeX className="h-4 w-4" aria-hidden />
+        ) : (
+          <Volume2 className="h-4 w-4" aria-hidden />
+        )}
+        <span className="sr-only">{silenciado ? 'Activar sonido' : 'Silenciar'}</span>
+      </button>
+
+      <button
+        type="button"
+        className="boton boton-tactil"
+        onClick={repetirTutorial}
+        title="Ver el tutorial otra vez"
+      >
+        <GraduationCap className="h-4 w-4" aria-hidden />
+        <span className={compacta ? 'sr-only' : ''}>Tutorial</span>
+      </button>
+
+      <button
+        type="button"
+        className="boton boton-tactil"
+        onClick={() => {
+          if (confirm('¿Reiniciar la partida? Se perderá el avance guardado.')) reiniciar();
+        }}
+        title="Reiniciar la partida"
+      >
+        <RotateCcw className="h-4 w-4" aria-hidden />
+        <span className={compacta ? 'sr-only' : ''}>Reiniciar</span>
+      </button>
+    </div>
+  );
+
+  if (compacta) {
+    return (
+      <div className="flex items-center justify-between gap-2 border-b border-pizarra-600/70 bg-pizarra-900 px-3 py-1.5">
+        <h1 className="truncate font-tactica text-[11px] font-semibold uppercase tracking-[0.16em] text-papel-100">
+          Mandato de Ley
+        </h1>
+        {acciones}
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -183,39 +324,7 @@ function BarraSuperior({
           Activismo Tycoon · War Room · Regulación Integral del Cannabis
         </p>
       </div>
-
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          className="boton"
-          onClick={() => setSilenciado(alternarSilencio())}
-          aria-pressed={silenciado}
-          title={silenciado ? 'Activar sonido' : 'Silenciar'}
-        >
-          {silenciado ? (
-            <VolumeX className="h-3 w-3" aria-hidden />
-          ) : (
-            <Volume2 className="h-3 w-3" aria-hidden />
-          )}
-          <span className="sr-only">{silenciado ? 'Activar sonido' : 'Silenciar'}</span>
-        </button>
-
-        <button type="button" className="boton" onClick={repetirTutorial}>
-          <GraduationCap className="h-3 w-3" aria-hidden />
-          Tutorial
-        </button>
-
-        <button
-          type="button"
-          className="boton"
-          onClick={() => {
-            if (confirm('¿Reiniciar la partida? Se perderá el avance guardado.')) reiniciar();
-          }}
-        >
-          <RotateCcw className="h-3 w-3" aria-hidden />
-          Reiniciar
-        </button>
-      </div>
+      {acciones}
     </div>
   );
 }
@@ -304,13 +413,32 @@ function BarraAvanzar({
   despachar,
   enJuego,
   bloqueado,
+  compacta = false,
 }: {
   estado: GameState;
   despachar: (comando: ComandoJuego) => void;
   enJuego: boolean;
   bloqueado: boolean;
+  compacta?: boolean;
 }) {
   const enDescanso = estado.estadoJuego === 'DESCANSO_FORZADO_SEM_48';
+
+  const boton = (
+    <button
+      type="button"
+      data-tour="avanzar"
+      className={`boton boton-primario boton-tactil ${
+        compacta ? 'w-full py-2.5 text-sm' : 'px-5 py-2 text-sm'
+      }`}
+      disabled={!enJuego || bloqueado || estado.decisionPendiente !== null}
+      onClick={() => despachar({ tipo: 'AVANZAR_SEMANA' })}
+    >
+      Avanzar a la semana {estado.semanaActual + 1}
+      <ChevronRight className="h-4 w-4" aria-hidden />
+    </button>
+  );
+
+  if (compacta) return <div className="mt-2">{boton}</div>;
 
   return (
     <div className="panel flex flex-wrap items-center justify-between gap-3 px-4 py-3">
@@ -319,16 +447,7 @@ function BarraAvanzar({
           ? 'Estás inhabilitado. Solo el colectivo puede trabajar esta semana.'
           : 'Reparte tus horas, cabildea lo que alcance y cierra la semana.'}
       </p>
-      <button
-        type="button"
-        data-tour="avanzar"
-        className="boton boton-primario px-5 py-2 text-sm"
-        disabled={!enJuego || bloqueado || estado.decisionPendiente !== null}
-        onClick={() => despachar({ tipo: 'AVANZAR_SEMANA' })}
-      >
-        Avanzar a la semana {estado.semanaActual + 1}
-        <ChevronRight className="h-4 w-4" aria-hidden />
-      </button>
+      {boton}
     </div>
   );
 }

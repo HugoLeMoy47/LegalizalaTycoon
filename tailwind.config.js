@@ -3,6 +3,11 @@ export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
     extend: {
+      screens: {
+        // Punto de corte para teléfonos angostos: por debajo, las pestañas
+        // muestran solo el icono.
+        xs: '400px',
+      },
       colors: {
         // Paleta War Room (GDD 11): azul marino oscuro, gris pizarra,
         // beige de papel oficial y acentos en verde olivo institucional.

@@ -134,6 +134,81 @@ export function checklistVictoria(estado: GameState) {
   ];
 }
 
+// ---------------------------------------------------------------------------
+// Guia del turno (v2.1) — qué le toca hacer al jugador esta semana
+// ---------------------------------------------------------------------------
+
+export type IdPasoTurno = 'REPARTIR' | 'CABILDEAR' | 'CERRAR';
+
+export interface PasoTurno {
+  id: IdPasoTurno;
+  numero: number;
+  etiqueta: string;
+  /** Qué tiene que hacer, en una línea. */
+  pista: string;
+  /** Ya lo resolvió esta semana. */
+  hecho: boolean;
+  /** Tiene sentido esta semana (si no, ni se muestra como pendiente). */
+  disponible: boolean;
+}
+
+/**
+ * Secuencia de acciones de la semana. Vive en el motor y no en la UI porque
+ * depende de reglas de juego: qué está desbloqueado, si hay votos suficientes,
+ * si el líder está inhabilitado por el Descanso Forzado.
+ */
+export function pasosDelTurno(estado: GameState): PasoTurno[] {
+  const enDescanso = estado.estadoJuego === 'DESCANSO_FORZADO_SEM_48';
+  const asignadas = horasAsignadasTotales(estado);
+  const presupuesto = presupuestoHorasLider(estado);
+  const aliadosConTarea = aliadosActivos(estado).filter((m) => m.horasAsignadas > 0).length;
+
+  const votos = semaforoComision(estado);
+  const faltanVotos = Boolean(estado.comisionActiva) && !votos.suficientes;
+  const hayAQuienCabildear = Boolean(
+    estado.comisionActiva?.legisladores.some((l) => l.postura !== 'FAVOR'),
+  );
+
+  return [
+    {
+      id: 'REPARTIR',
+      numero: 1,
+      etiqueta: 'Reparte tus horas',
+      pista: enDescanso
+        ? 'Estás inhabilitado: solo el colectivo puede trabajar esta semana.'
+        : `Distribuye tus ${presupuesto} horas entre las tareas de la semana.`,
+      hecho: enDescanso ? aliadosConTarea > 0 : asignadas >= presupuesto,
+      disponible: !enDescanso || aliadosActivos(estado).length > 0,
+    },
+    {
+      id: 'CABILDEAR',
+      numero: 2,
+      etiqueta: 'Convence legisladores',
+      pista: faltanVotos
+        ? `Te faltan ${votos.requeridos - votos.FAVOR} votos para que la comisión dictamine.`
+        : 'Ya tienes los votos que necesita la comisión.',
+      hecho: Boolean(estado.comisionActiva) && votos.suficientes,
+      disponible: estado.comisionDesbloqueada && faltanVotos && hayAQuienCabildear,
+    },
+    {
+      id: 'CERRAR',
+      numero: 3,
+      etiqueta: 'Cierra la semana',
+      pista:
+        estado.decisionPendiente !== null
+          ? 'Primero resuelve el dilema que tienes sobre la mesa.'
+          : 'Cuando termines, avanza el calendario.',
+      hecho: false,
+      disponible: estado.decisionPendiente === null,
+    },
+  ];
+}
+
+/** Primer paso pendiente; null si ya solo queda cerrar la semana. */
+export function pasoActual(estado: GameState): PasoTurno | null {
+  return pasosDelTurno(estado).find((p) => p.disponible && !p.hecho) ?? null;
+}
+
 export const ETIQUETA_VERBO: Record<VerboAccion, string> = {
   INVESTIGAR: 'Investigar / Redactar',
   MOVILIZAR: 'Movilizar',

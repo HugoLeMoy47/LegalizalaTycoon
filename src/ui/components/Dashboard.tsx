@@ -30,6 +30,85 @@ const RANGO_FASE: Record<GameState['faseActual'], string> = {
   FEDERAL: 'Semanas 66-100',
 };
 
+/**
+ * Cabecera compacta para móvil: se queda fija arriba para que el jugador nunca
+ * pierda de vista la semana ni la tríada mientras reparte horas o cabildea.
+ * Ocupa ~64 px frente a los 217 px de la versión completa.
+ */
+export function DashboardCompacto({ estado }: { estado: GameState }) {
+  const { recursos } = estado;
+
+  return (
+    <header className="panel rounded-none border-x-0 border-t-0 px-3 py-2">
+      <div className="flex items-center justify-between gap-3">
+        <p className="font-tactica text-sm font-semibold tabular-nums text-papel-100">
+          S{estado.semanaActual}
+          <span className="text-slate-500">/{SEMANAS_TOTALES}</span>
+        </p>
+        <p className="truncate font-tactica text-[10px] uppercase tracking-[0.12em] text-slate-400">
+          {NOMBRE_FASE[estado.faseActual]}
+        </p>
+        <p className="shrink-0 font-tactica text-[10px] tabular-nums text-slate-400">
+          {estado.colectivo.filter((m) => m.rol !== 'LIDER' && m.activo).length}/3 aliados
+        </p>
+      </div>
+
+      <div className="mt-1.5 flex items-center gap-2" data-tour="triada">
+        <MiniBarra etiqueta="Apoyo" valor={recursos.apoyoSocial} clase="bg-sky-500" />
+        <MiniBarra etiqueta="Presión" valor={recursos.presionPolitica} clase="bg-alerta" />
+        <MiniBarra
+          etiqueta="Resist."
+          valor={recursos.resistencia}
+          clase={
+            recursos.resistencia < UMBRAL_NIEBLA_MENTAL
+              ? 'bg-opositor animate-pulso-rojo'
+              : 'bg-favor'
+          }
+        />
+      </div>
+
+      {enDescansoForzado(estado) && (
+        <p className="franja-diagonal mt-1.5 rounded px-2 py-0.5 text-center font-tactica text-[9px] uppercase tracking-[0.12em] text-alerta">
+          Descanso forzado
+        </p>
+      )}
+    </header>
+  );
+}
+
+function MiniBarra({ etiqueta, valor, clase }: { etiqueta: string; valor: number; clase: string }) {
+  const acotado = Math.max(0, Math.min(100, valor));
+  return (
+    <div className="min-w-0 flex-1">
+      <div className="flex items-baseline justify-between">
+        <span className="truncate font-tactica text-[9px] uppercase tracking-wide text-slate-500">
+          {etiqueta}
+        </span>
+        <span className="font-tactica text-[10px] font-semibold tabular-nums text-slate-200">
+          {Math.round(acotado)}%
+        </span>
+      </div>
+      <div
+        className="mt-0.5 h-1.5 overflow-hidden rounded-full bg-pizarra-900"
+        role="meter"
+        aria-label={etiqueta}
+        aria-valuenow={Math.round(acotado)}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      >
+        <div
+          className={`h-full rounded-full transition-[width] duration-500 ${clase}`}
+          style={{ width: `${acotado}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function enDescansoForzado(estado: GameState): boolean {
+  return estado.estadoJuego === 'DESCANSO_FORZADO_SEM_48';
+}
+
 export function Dashboard({ estado }: { estado: GameState }) {
   const { recursos, ultimoTurno } = estado;
   const enDescanso = estado.estadoJuego === 'DESCANSO_FORZADO_SEM_48';
@@ -90,7 +169,7 @@ export function Dashboard({ estado }: { estado: GameState }) {
         </p>
       )}
 
-      <div data-tour="triada" className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 lg:grid-cols-4">
+      <div data-tour="triada-escritorio" className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 lg:grid-cols-4">
         <BarraRecurso
           etiqueta="Apoyo social"
           valor={recursos.apoyoSocial}

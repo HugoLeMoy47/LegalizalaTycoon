@@ -212,7 +212,7 @@ function FichaLegislador({
           {!yaVota && (
             <button
               type="button"
-              className="boton px-2 py-1"
+              className="boton boton-tactil px-2 py-1"
               disabled={!alcanzaPresion}
               onClick={() => despachar({ tipo: 'CABILDEAR_LEGISLADOR', legisladorId: legislador.id })}
               title={`Cabildear: cuesta ${legislador.costoCabildeo} de Presión Política`}
@@ -224,7 +224,7 @@ function FichaLegislador({
           {!yaVota && legislador.precioVotoFondos !== undefined && (
             <button
               type="button"
-              className="boton px-2 py-1 text-verdepvem"
+              className="boton boton-tactil px-2 py-1 text-verdepvem"
               disabled={!puedeComprar}
               onClick={() => despachar({ tipo: 'COMPRAR_VOTO', legisladorId: legislador.id })}
               title={`Comprar el voto por ${formatearPesos(legislador.precioVotoFondos)}. Las bases se enteran.`}

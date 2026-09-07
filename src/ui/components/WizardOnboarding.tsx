@@ -97,10 +97,24 @@ interface Rect {
   height: number;
 }
 
-export function WizardOnboarding({ onTerminar }: { onTerminar: () => void }) {
+interface Props {
+  onTerminar: () => void;
+  /**
+   * Avisa qué objetivo se está iluminando. En móvil el tablero vive en
+   * pestañas, así que la app tiene que abrir la que contiene el objetivo antes
+   * de que el spotlight lo busque en el DOM.
+   */
+  onObjetivo?: (objetivo: string) => void;
+}
+
+export function WizardOnboarding({ onTerminar, onObjetivo }: Props) {
   const [indice, setIndice] = useState(0);
   const [rect, setRect] = useState<Rect | null>(null);
   const paso = PASOS[indice];
+
+  useEffect(() => {
+    onObjetivo?.(paso.objetivo);
+  }, [paso.objetivo, onObjetivo]);
 
   const medir = useCallback(() => {
     const nodo = document.querySelector<HTMLElement>(`[data-tour="${paso.objetivo}"]`);
