@@ -243,3 +243,83 @@ Este documento registra la memoria histórica, acuerdos conceptuales, decisiones
   3. Event Deck sigue corto: cinco cartas, una vez por partida cada una.
 
 * **Próximo Hito:** Re-despliegue en Cloudflare y sesión de playtesting con usuarios reales, ahora sí con el onboarding completo, para medir si las tres primeras semanas transmiten la lección del activista solitario sin resultar frustrantes.
+
+### [2026-09-07] — Entrada #014: Consenso del Ritmo de Media Partida (Propuesta v2.1 — Recesos Largos)
+* **Estado:** **Propuesta en revisión.** Documento de decisión de diseño previo a la implementación, conforme al proceso de la Entrada #001. No hay código escrito para estos sistemas.
+* **Autor:** Agente Desarrollador & Líder de Proyecto.
+* **Contexto:** Con la v2.0 desplegada, se instrumentó la deuda técnica del ritmo registrada en la Entrada #011 (§10.1 de `ARQUITECTURA.md`) mediante una herramienta nueva de diagnóstico (`npm run sim:huecos`).
+
+#### 1. El Hallazgo: el diagnóstico anterior estaba mal planteado
+
+La Entrada #011 registró el problema como *"recesos largos entre fases: un jugador eficiente puede quedarse ~20 semanas sin comisión activa"*. La medición sobre seis semillas distintas devuelve un cuadro peor y distinto:
+
+| Fase | Instancia resuelta en | Semanas sin comisión activa |
+| :--- | :--- | ---: |
+| Municipal (6-30) | semana 7 | **24** |
+| Estatal (31-65) | semana 35 | **30** |
+| Federal (66-100) | semana 88 | 1 |
+| **Total** | | **55 de 100** |
+
+**Resultado idéntico en las seis semillas:** el problema es estructural, no depende del azar del Event Deck.
+
+El enunciado correcto no es "hay recesos al final de cada fase" sino **"cada instancia se resuelve en una a cuatro semanas y el resto de la fase queda vacío"**. La Etapa C que la v2.0 acaba de construir —semanas 6 a 30— colapsa en un solo turno.
+
+**Causas identificadas:**
+1. **Embotellamiento de Presión Política.** Cabildear sigue produciendo presión durante las semanas 1-5, cuando no hay a quién cabildear. El jugador llega a la semana 6 con el tanque lleno y voltea tres regidores de golpe. Nota: la guía v2.0 §5.B solo enumera **tres** acciones para la Etapa A (firmas, técnica jurídica, autocuidado); habilitar cabildeo ahí fue una desviación de implementación, no una decisión de diseño.
+2. **Comisiones calibradas contra su propio reloj, no contra la fase.** Un reloj de congeladora de 16 semanas dentro de una fase de 25 significa que resolver rápido deja 24 semanas sobrantes.
+
+#### 2. Opciones Evaluadas
+
+| Opción | Qué aporta | Qué enseña | Esfuerzo |
+| :--- | :--- | :--- | :--- |
+| **A · Ruta Judicial** | Carril paralelo con reloj y riesgo propios; absorbe el receso completo | Cuando el Congreso te cierra la puerta, existe otra | Alto |
+| **B · Defensa de la Implementación** | Convierte el receso en algo que se puede perder | Victoria legislativa ≠ cambio material | Bajo-medio |
+| **C · Estirar el Embudo** | Que la instancia dure lo que dura la fase | El embudo real tiene más cuellos de los que crees | Bajo |
+| **D · Renovación de Legislatura** | Costo explícito al cruzar de fase | El capital político es perecedero y personal | Bajo-medio |
+
+#### 3. Decisión: se aprueba el paquete completo (A + B + C + D)
+
+**Justificación:** C por sí sola reduce las semanas muertas de ~55 a ~35 sin resolver el fondo; A es el único sistema capaz de absorber 25 semanas con consecuencia real; B y D dan sentido de riesgo a un tramo que hoy es puramente acumulativo. Se implementan como una iteración **v2.1** de alcance comparable a la v2.0.
+
+---
+
+##### 3.C — Estirar el Embudo (piso obligatorio)
+
+1. **Cabildear se deshabilita durante la Etapa A** (semanas 1-5), alineándose con las tres acciones que enumera la guía v2.0. El jugador entra a la semana 6 con la presión cerca de cero y debe construirla con el reloj corriendo.
+2. **Consulta / Parlamento Abierto** como compuerta obligatoria entre el dictamen y el Pleno: la comisión convoca foro, consume 2 a 3 semanas y exige un mínimo de Apoyo Social. Es trámite real y a la vez cuello de botella real — el propio catálogo satírico de la v2.0 ya se burla de él (*"convoca a Foro de Parlamento Abierto pero solo invita a ponentes afines"*).
+3. **Comisión de Presupuesto** en las fases estatal y federal: si la ley conserva su presupuesto —es decir, **si no fue mutilada**— necesita dictamen adicional de Hacienda. Consecuencia de diseño deliberada: **mutilar la ley se vuelve mecánicamente tentador porque te ahorra una comisión entera**. El dilema ético deja de ser un modal aislado y pasa a tener peso en el calendario.
+4. **Recalibración municipal:** subir `votosFavorRequeridos` del cabildo y los costos de cabildeo, para que la instancia municipal ocupe su fase.
+
+##### 3.A — Ruta Judicial (Litigio Estratégico)
+
+Fiel al derecho mexicano y a la historia real de la causa: la Suprema Corte forzó al Congreso precisamente porque el Congreso congelaba el asunto.
+
+* **Recurso nuevo:** `amparosGanados` (0 a 5).
+* **Verbo nuevo:** `LITIGAR`, quinto verbo del reparto de horas. La abogada pro-bono lo multiplica ×1.8.
+* **Mecánica:** cada amparo acumula progreso por horas y exige un mínimo de Solidez Técnica. Al completarse, el siguiente amparo cuesta más: los tribunales se ponen exigentes. Un amparo puede perderse (probabilidad baja, determinista por semilla), costando fondos y solidez.
+* **Hito de los 5 amparos — Jurisprudencia Obligatoria:** la SCJN declara la **omisión legislativa** del Congreso. Efectos: Presión Política +25 de golpe, la comisión vigente y las siguientes reducen en 1 los votos requeridos y en 10 puntos el umbral del Pleno, y el expediente recibe un sello nuevo.
+* **Por qué vive en el receso sin necesidad de prohibirlo:** litigar no consume el reloj de la congeladora, y con una instancia activa las horas rinden más en cabildeo. El costo de oportunidad empuja el litigio al receso **sin bloqueos artificiales**, que es preferible a un candado.
+* **Desbloqueo escalonado:** la ruta judicial se abre al ganar la primera instancia (no desde la semana 1), aplicando el mismo principio anti-sobrecarga que rige la v2.0.
+* **Mapa de nodos:** columna judicial paralela con los cinco amparos y la SCJN.
+
+##### 3.B — Defensa de la Implementación
+
+* **Recurso nuevo:** `deudaDeImplementacion` (0 a 100).
+* **Mecánica:** ganada una instancia, la ley existe en el papel y la calle no cambia sola. Cada semana de receso la deuda sube; dedicar horas a **Movilizar** la contiene. **No se añade un sexto verbo:** Movilizar pasa a significar "sostener la base y vigilar que la ley se aplique". El enlace de base la contiene con mucha mayor eficiencia, premiando el colectivo sin obligar a tenerlo.
+* **Umbrales:** al cruzar 50, evento *"la ley que no se aplica"* con caída de Apoyo Social y titular de gaceta propio; al cruzar 80, fisura interna severa.
+* **Epílogo:** la deuda acumulada se reporta en la pantalla final. Se puede llegar al DOF con la ley íntegra y con una deuda de implementación que la vuelve papel — una tercera vía entre la victoria limpia y la ley mutilada.
+
+##### 3.D — Renovación de Legislatura
+
+* **Disparador:** transición de fase (semanas 31 y 66). Modal narrativo: *"Elección intermedia: el Congreso que conociste ya no existe."*
+* **Efectos:** recomposición determinista de las posturas base de la nueva comisión, corte explícito de Presión Política al cruzar de fase, y probabilidad elevada de que un aliado reciba oferta de cooptación durante la transición.
+
+#### 4. Riesgos Asumidos y Condiciones de Aceptación
+
+1. **Sobrecarga cognitiva.** Un quinto verbo, un carril judicial, un recurso de deuda y una elección intermedia son mucho para absorber de golpe. **Mitigación:** todo entra por desbloqueo escalonado, como la v2.0, y nada aparece antes de ganar la primera instancia.
+2. **La matriz de arquetipos se romperá.** Los bots de `politicas.ts` no saben litigar ni defender la implementación, así que el *Estratega colectivo* se verá artificialmente peor. **Condición de aceptación:** la iteración no se considera terminada hasta que los cuatro arquetipos vuelvan a producir cuatro desenlaces distintos y coherentes, conforme al criterio de la Entrada #011.
+3. **Medición obligatoria.** `npm run sim:huecos` debe bajar de 55 semanas muertas a **menos de 15** para dar el trabajo por bueno. Es el criterio numérico de éxito de esta entrada.
+4. **La comisión de presupuesto es un incentivo perverso deliberado.** Hace más atractivo mutilar la ley. Es intencional y pedagógicamente correcto —así opera el chantaje presupuestal real—, pero exige vigilar que la victoria íntegra siga siendo alcanzable.
+
+#### 5. Próximo Hito
+Implementación de la v2.1 en el orden C → B → D → A (de menor a mayor riesgo de balance), recalibración de las políticas de simulación y validación contra los dos criterios numéricos de la sección 4.
