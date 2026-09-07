@@ -25,7 +25,6 @@ import {
   asignarHorasAliado,
   cabildearLegislador,
   comprarVoto,
-  limpiarAsignaciones,
   meterHorasExtra,
   quitarHorasExtra,
   reclutar,
@@ -53,14 +52,20 @@ import {
 } from './balance';
 import { MEDIOS_FICTICIOS, TITULARES_GACETA } from './data/narrativa';
 import { aplicarDescansoForzado, despacharEventos, dispararSemana48 } from './disparadores';
-import { esSemanaDeDescanso, marcarNodo, sellar } from './estado';
+import { VERBOS, esSemanaDeDescanso, lider, marcarNodo, presupuestoHorasLider, sellar } from './estado';
 import {
   avanzarRelojCongeladora,
   evaluarDesenlace,
   evaluarTransicionDeFase,
   resolverLegislativo,
 } from './legislativo';
-import type { ComandoJuego, GameState, ResultadoComando, ResumenTurno } from './types';
+import type {
+  ComandoJuego,
+  GameState,
+  MotivoParada,
+  ResultadoComando,
+  ResumenTurno,
+} from './types';
 import { acotar, clonarEstado, elegir, redondear, registrar } from './utilidades';
 
 // ---------------------------------------------------------------------------
@@ -192,8 +197,52 @@ function procesarSemana(estado: GameState): void {
     horasExtra: estado.recursos.horasExtraMetidas,
   } satisfies ResumenTurno;
 
-  limpiarAsignaciones(estado);
+  cerrarReparto(estado);
+}
+
+/**
+ * Cierre del reparto de horas (v2.1).
+ *
+ * Las asignaciones **persisten** entre semanas: el jugador las define una vez y
+ * siguen rigiendo hasta que decida cambiarlas. Antes se borraban cada turno, y
+ * eso obligaba a repartir cien veces lo mismo — la causa de que la partida se
+ * sintiera lenta aunque no pasara nada.
+ *
+ * Las horas extra sí se reinician: son una decisión explícita de "esta semana
+ * me desvelo", y dejarlas fijas convertiría la trampa del mártir en un suicidio
+ * accidental durante una corrida de varias semanas.
+ */
+function cerrarReparto(estado: GameState): void {
   estado.recursos.horasExtraMetidas = 0;
+
+  // Al desaparecer las horas extra el presupuesto se encoge; si el reparto ya
+  // no cabe, se reduce en proporción para conservar la intención del jugador.
+  const presupuesto = presupuestoHorasLider(estado);
+  const asignadas = VERBOS.reduce((s, v) => s + estado.asignaciones[v], 0);
+
+  if (asignadas > presupuesto) {
+    if (presupuesto <= 0) {
+      for (const verbo of VERBOS) estado.asignaciones[verbo] = 0;
+    } else {
+      const factor = presupuesto / asignadas;
+      let repartidas = 0;
+      for (const verbo of VERBOS) {
+        const nuevas = Math.floor(estado.asignaciones[verbo] * factor);
+        estado.asignaciones[verbo] = nuevas;
+        repartidas += nuevas;
+      }
+      // El sobrante por redondeo va al verbo con más horas.
+      const sobrante = presupuesto - repartidas;
+      if (sobrante > 0) {
+        const mayor = VERBOS.reduce((a, b) =>
+          estado.asignaciones[a] >= estado.asignaciones[b] ? a : b,
+        );
+        estado.asignaciones[mayor] += sobrante;
+      }
+    }
+  }
+
+  lider(estado).horasAsignadas = VERBOS.reduce((s, v) => s + estado.asignaciones[v], 0);
 }
 
 /** Donaciones proporcionales al apoyo, menos el costo fijo de operacion. */
@@ -342,7 +391,106 @@ export function avanzarSemana(estadoOriginal: GameState): ResultadoComando {
   }
 
   const estado = clonarEstado(estadoOriginal);
+  estado.ultimoAvance = null;
   procesarSemana(estado);
+  return { estado, ok: true };
+}
+
+/** Tope duro de semanas por corrida: nunca deja al jugador fuera del volante. */
+export const MAXIMO_SEMANAS_POR_AVANCE = 8;
+
+/**
+ * ¿Ocurrió algo que merezca devolverle el control al jugador?
+ *
+ * Se evalúa DESPUÉS de simular la semana. Las entradas de Gaceta y de Sistema
+ * son color narrativo y no detienen la corrida; todo lo demás sí.
+ */
+function motivoDeParada(
+  estado: GameState,
+  marcaRegistro: number,
+  faseAntes: GameState['faseActual'],
+  estadoJuegoAntes: GameState['estadoJuego'],
+): MotivoParada | null {
+  if (estado.estadoJuego !== estadoJuegoAntes) return 'CAMBIO_DE_ESTADO';
+  if (estado.decisionPendiente) return 'DECISION';
+  if (estado.hitoPendiente) return 'HITO';
+  if (estado.faseActual !== faseAntes) return 'CAMBIO_DE_FASE';
+
+  const nuevas = estado.registro.slice(marcaRegistro);
+  if (nuevas.some((e) => e.tipo !== 'GACETA' && e.tipo !== 'SISTEMA')) return 'EVENTO';
+
+  return null;
+}
+
+/**
+ * Corre semanas con el reparto vigente hasta que algo requiera atención.
+ *
+ * El motor simula cada semana exactamente igual que `avanzarSemana`: la Semana
+ * 48, el reloj de la congeladora, la fatiga acumulada y los umbrales siguen
+ * operando turno a turno. Lo único que cambia es cuándo se le devuelve el
+ * control al jugador. Por eso esta mecánica no altera el balance.
+ */
+export function avanzarHastaEvento(
+  estadoOriginal: GameState,
+  maximoSemanas = MAXIMO_SEMANAS_POR_AVANCE,
+): ResultadoComando {
+  const guardia = avanzarSemana(estadoOriginal);
+  if (!guardia.ok) return guardia;
+
+  const antes = {
+    apoyoSocial: estadoOriginal.recursos.apoyoSocial,
+    presionPolitica: estadoOriginal.recursos.presionPolitica,
+    resistencia: estadoOriginal.recursos.resistencia,
+    solidezTecnica: estadoOriginal.solidezTecnica,
+    firmas: estadoOriginal.firmasRecolectadas,
+    semana: estadoOriginal.semanaActual,
+  };
+
+  const estado = clonarEstado(estadoOriginal);
+  const tope = Math.max(1, Math.min(maximoSemanas, MAXIMO_SEMANAS_POR_AVANCE));
+  let corridas = 0;
+  let motivo: MotivoParada = 'LIMITE';
+
+  while (corridas < tope) {
+    const marcaRegistro = estado.registro.length;
+    const faseAntes = estado.faseActual;
+    const estadoJuegoAntes = estado.estadoJuego;
+
+    procesarSemana(estado);
+    corridas += 1;
+
+    const parada = motivoDeParada(estado, marcaRegistro, faseAntes, estadoJuegoAntes);
+    if (parada) {
+      motivo = parada;
+      break;
+    }
+    if (estado.estadoJuego !== 'JUGANDO') {
+      motivo = 'CAMBIO_DE_ESTADO';
+      break;
+    }
+  }
+
+  // Los deltas se agregan sobre toda la corrida: es lo que el jugador quiere
+  // ver flotando, no lo que cambió en la última de ocho semanas.
+  estado.ultimoTurno = {
+    semana: estado.semanaActual - 1,
+    fase: estado.faseActual,
+    deltaApoyoSocial: redondear(estado.recursos.apoyoSocial - antes.apoyoSocial),
+    deltaPresionPolitica: redondear(estado.recursos.presionPolitica - antes.presionPolitica),
+    deltaResistencia: redondear(estado.recursos.resistencia - antes.resistencia),
+    deltaSolidezTecnica: redondear(estado.solidezTecnica - antes.solidezTecnica),
+    deltaFirmas: estado.firmasRecolectadas - antes.firmas,
+    horasTrabajadas: estado.ultimoTurno?.horasTrabajadas ?? 0,
+    horasExtra: 0,
+  };
+
+  estado.ultimoAvance = {
+    semanaInicio: antes.semana,
+    semanaFin: estado.semanaActual,
+    semanasCorridas: corridas,
+    motivo,
+  };
+
   return { estado, ok: true };
 }
 
@@ -355,6 +503,9 @@ export function ejecutarComando(
   comando: ComandoJuego,
 ): ResultadoComando {
   if (comando.tipo === 'AVANZAR_SEMANA') return avanzarSemana(estadoOriginal);
+  if (comando.tipo === 'AVANZAR_HASTA_EVENTO') {
+    return avanzarHastaEvento(estadoOriginal, comando.maximoSemanas);
+  }
 
   const estado = clonarEstado(estadoOriginal);
 

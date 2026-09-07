@@ -12,6 +12,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   type ComandoJuego,
   type GameState,
+  type ResumenAvance,
   type ResumenTurno,
   crearEstadoInicial,
   ejecutarComando,
@@ -33,6 +34,8 @@ export interface Transicion {
   resumen: ResumenTurno;
   semanaEntrante: number;
   relojCongeladora: number | null;
+  /** Presente solo si la corrida abarcó varias semanas. */
+  avance: ResumenAvance | null;
 }
 
 function leerBandera(clave: string): boolean {
@@ -110,7 +113,10 @@ export function useJuego() {
 
       setEstado(resultado.estado);
 
-      if (comando.tipo === 'AVANZAR_SEMANA' && resultado.estado.ultimoTurno) {
+      const avanzoElReloj =
+        comando.tipo === 'AVANZAR_SEMANA' || comando.tipo === 'AVANZAR_HASTA_EVENTO';
+
+      if (avanzoElReloj && resultado.estado.ultimoTurno) {
         sonarSello();
         setBloqueado(true);
         setTransicion({
@@ -119,6 +125,7 @@ export function useJuego() {
           relojCongeladora: resultado.estado.comisionDesbloqueada
             ? (resultado.estado.comisionActiva?.relojCongeladoraSemanas ?? null)
             : null,
+          avance: resultado.estado.ultimoAvance,
         });
         setTimeout(() => setBloqueado(false), DURACION_TRANSICION_MS);
       }

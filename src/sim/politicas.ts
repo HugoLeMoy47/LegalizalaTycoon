@@ -23,13 +23,29 @@ export interface Politica {
 // Helpers compartidos
 // ---------------------------------------------------------------------------
 
+/**
+ * Reparte el presupuesto según pesos relativos.
+ *
+ * v2.1: emite **los cuatro verbos siempre**, poniendo en cero los que no
+ * aparecen en los pesos. Desde que las asignaciones persisten entre semanas,
+ * omitir un verbo dejaría vivas las horas de la semana anterior y el reparto
+ * acabaría excediendo el presupuesto.
+ */
 function repartirHoras(
   presupuesto: number,
   pesos: Partial<Record<(typeof VERBOS)[number], number>>,
 ): ComandoJuego[] {
   const total = Object.values(pesos).reduce<number>((s, v) => s + (v ?? 0), 0);
-  if (total <= 0) return [];
-  const comandos: ComandoJuego[] = [];
+
+  // Primero se liberan los verbos que esta semana no llevan horas.
+  const comandos: ComandoJuego[] = VERBOS.filter((v) => !pesos[v]).map((verbo) => ({
+    tipo: 'ASIGNAR_HORAS' as const,
+    verbo,
+    horas: 0,
+  }));
+
+  if (total <= 0) return comandos;
+
   let restante = presupuesto;
   const entradas = Object.entries(pesos) as [(typeof VERBOS)[number], number][];
 
@@ -37,7 +53,7 @@ function repartirHoras(
     const esUltimo = indice === entradas.length - 1;
     const horas = esUltimo ? restante : Math.floor((presupuesto * peso) / total);
     restante -= horas;
-    if (horas > 0) comandos.push({ tipo: 'ASIGNAR_HORAS', verbo, horas });
+    comandos.push({ tipo: 'ASIGNAR_HORAS', verbo, horas });
   });
 
   return comandos;

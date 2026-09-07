@@ -73,6 +73,7 @@ export function crearEstadoInicial(opciones: OpcionesPartida = {}): GameState {
     banderas: {},
     semanaUltimaCarta: -99,
     ultimoTurno: null,
+    ultimoAvance: null,
   };
 
   // La iniciativa aún no está turnada: eso ocurre en la semana 6, cuando

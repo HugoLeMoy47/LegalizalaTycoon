@@ -15,7 +15,16 @@
  */
 
 import { useCallback, useState } from 'react';
-import { ChevronRight, GraduationCap, Info, RotateCcw, Target, Volume2, VolumeX } from 'lucide-react';
+import {
+  ChevronRight,
+  FastForward,
+  GraduationCap,
+  Info,
+  RotateCcw,
+  Target,
+  Volume2,
+  VolumeX,
+} from 'lucide-react';
 
 import {
   GLOSARIO,
@@ -109,6 +118,7 @@ export function App() {
           semanaEntrante={transicion.semanaEntrante}
           totalSemanas={SEMANAS_TOTALES}
           relojCongeladora={transicion.relojCongeladora}
+          avance={transicion.avance}
           onFinalizar={limpiarTransicion}
         />
       )}
@@ -428,31 +438,54 @@ function BarraAvanzar({
 }) {
   const enDescanso = estado.estadoJuego === 'DESCANSO_FORZADO_SEM_48';
 
-  const boton = (
-    <button
-      type="button"
-      data-tour="avanzar"
-      className={`boton boton-primario boton-tactil ${
-        compacta ? 'w-full py-2.5 text-sm' : 'px-5 py-2 text-sm'
-      }`}
-      disabled={!enJuego || bloqueado || estado.decisionPendiente !== null}
-      onClick={() => despachar({ tipo: 'AVANZAR_SEMANA' })}
-    >
-      Avanzar a la semana {estado.semanaActual + 1}
-      <ChevronRight className="h-4 w-4" aria-hidden />
-    </button>
+  const inhabilitado = !enJuego || bloqueado || estado.decisionPendiente !== null;
+
+  /*
+   * La acción principal corre varias semanas y se detiene sola cuando algo
+   * requiere al jugador. El avance de una sola semana queda como control fino
+   * para los momentos de tensión, donde cada turno cuenta.
+   */
+  const botones = (
+    <div className="flex items-stretch gap-2" data-tour="avanzar">
+      <button
+        type="button"
+        className={`boton boton-primario boton-tactil flex-1 ${
+          compacta ? 'py-2.5 text-sm' : 'px-5 py-2 text-sm'
+        }`}
+        disabled={inhabilitado}
+        onClick={() => despachar({ tipo: 'AVANZAR_HASTA_EVENTO' })}
+        title="Corre las semanas hasta que ocurra algo que necesite tu atención"
+      >
+        <FastForward className="h-4 w-4" aria-hidden />
+        Avanzar hasta el próximo suceso
+      </button>
+
+      <button
+        type="button"
+        className="boton boton-tactil shrink-0 px-3"
+        disabled={inhabilitado}
+        onClick={() => despachar({ tipo: 'AVANZAR_SEMANA' })}
+        title={`Avanzar solo a la semana ${estado.semanaActual + 1}`}
+      >
+        <ChevronRight className="h-4 w-4" aria-hidden />
+        <span className="sr-only">Avanzar una sola semana</span>
+        <span aria-hidden className="font-tactica text-[11px]">
+          +1
+        </span>
+      </button>
+    </div>
   );
 
-  if (compacta) return <div className="mt-2">{boton}</div>;
+  if (compacta) return <div className="mt-2">{botones}</div>;
 
   return (
     <div className="panel flex flex-wrap items-center justify-between gap-3 px-4 py-3">
       <p className="font-tactica text-[11px] text-slate-500">
         {enDescanso
           ? 'Estás inhabilitado. Solo el colectivo puede trabajar esta semana.'
-          : 'Reparte tus horas, cabildea lo que alcance y cierra la semana.'}
+          : 'Tus horas siguen aplicándose semana a semana hasta que las cambies.'}
       </p>
-      {boton}
+      {botones}
     </div>
   );
 }

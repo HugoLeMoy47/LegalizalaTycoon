@@ -191,6 +191,23 @@ export interface HitoDesbloqueo {
   efectos: string[];
 }
 
+/** Por que se detuvo un avance de varias semanas. */
+export type MotivoParada =
+  | 'DECISION'
+  | 'HITO'
+  | 'CAMBIO_DE_FASE'
+  | 'CAMBIO_DE_ESTADO'
+  | 'EVENTO'
+  | 'LIMITE';
+
+/** Resumen de una corrida de varias semanas (v2.1). */
+export interface ResumenAvance {
+  semanaInicio: number;
+  semanaFin: number;
+  semanasCorridas: number;
+  motivo: MotivoParada;
+}
+
 /** Titular de prensa satirica de la Gaceta Semanal (GUIA v2.0 seccion 4.B). */
 export interface TitularGaceta {
   semana: number;
@@ -283,6 +300,8 @@ export interface GameState {
   semanaUltimaCarta: number;
   /** Resumen numerico del ultimo turno resuelto (panel de diagnostico). */
   ultimoTurno: ResumenTurno | null;
+  /** Resumen de la ultima corrida de varias semanas, si la hubo. */
+  ultimoAvance: ResumenAvance | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -301,7 +320,8 @@ export type ComandoJuego =
   | { tipo: 'CERRAR_HITO' }
   | { tipo: 'CERRAR_GACETA' }
   | { tipo: 'COMPLETAR_ONBOARDING' }
-  | { tipo: 'AVANZAR_SEMANA' };
+  | { tipo: 'AVANZAR_SEMANA' }
+  | { tipo: 'AVANZAR_HASTA_EVENTO'; maximoSemanas?: number };
 
 export interface ResultadoComando {
   estado: GameState;

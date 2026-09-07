@@ -8,7 +8,16 @@
 
 import { useEffect, useMemo, useState } from 'react';
 
-import type { FaseJuego, ResumenTurno } from '../../engine';
+import type { FaseJuego, MotivoParada, ResumenAvance, ResumenTurno } from '../../engine';
+
+const MOTIVO: Record<MotivoParada, string> = {
+  DECISION: 'Hay un dilema sobre la mesa',
+  HITO: 'Se abrió una etapa nueva',
+  CAMBIO_DE_FASE: 'Cambió el orden de gobierno',
+  CAMBIO_DE_ESTADO: 'Cambió el estado de la partida',
+  EVENTO: 'Algo requiere tu atención',
+  LIMITE: 'Pausa de control',
+};
 
 export const DURACION_TRANSICION_MS = 600;
 
@@ -32,6 +41,8 @@ interface Props {
   totalSemanas: number;
   /** Semanas restantes del reloj de la congeladora, si está corriendo. */
   relojCongeladora: number | null;
+  /** Resumen de la corrida cuando abarcó varias semanas. */
+  avance?: ResumenAvance | null;
   /**
    * Se llama al terminar la animación. Sin esto la transición quedaría marcada
    * como activa para siempre y bloquearía el pop-up de la Gaceta.
@@ -44,6 +55,7 @@ export function TransicionSemana({
   semanaEntrante,
   totalSemanas,
   relojCongeladora,
+  avance,
   onFinalizar,
 }: Props) {
   const [visible, setVisible] = useState(true);
@@ -89,8 +101,17 @@ export function TransicionSemana({
         className="sello sello-tinta-roja animate-sello bg-papel-100/95 px-6 py-3 text-center text-[15px] sm:text-[18px]"
         style={{ transform: `rotate(${rotacion}deg)` }}
       >
-        Semana {semanaEntrante} de {totalSemanas} — Fase {NOMBRE_FASE[resumen.fase].toUpperCase()}
+        {avance && avance.semanasCorridas > 1
+          ? `Semanas ${avance.semanaInicio}-${avance.semanaFin - 1} de ${totalSemanas}`
+          : `Semana ${semanaEntrante} de ${totalSemanas}`}{' — Fase '}
+        {NOMBRE_FASE[resumen.fase].toUpperCase()}
       </div>
+
+      {avance && avance.semanasCorridas > 1 && (
+        <p className="animate-delta -mt-3 font-tactica text-[11px] uppercase tracking-[0.14em] text-slate-400">
+          {avance.semanasCorridas} semanas corridas · {MOTIVO[avance.motivo]}
+        </p>
+      )}
 
       {/* Deltas flotantes */}
       {deltas.length > 0 && (
