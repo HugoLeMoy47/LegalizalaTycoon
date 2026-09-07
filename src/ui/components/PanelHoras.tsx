@@ -46,7 +46,7 @@ export function PanelHoras({ estado, despachar }: Props) {
   };
 
   return (
-    <section className="panel">
+    <section className="panel" data-tour="horas">
       <h2 className="panel-titulo">
         <Timer className="h-3.5 w-3.5" aria-hidden />
         Presupuesto de horas

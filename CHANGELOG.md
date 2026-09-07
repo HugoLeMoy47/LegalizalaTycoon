@@ -7,6 +7,49 @@ proyecto se adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [No publicado]
 
+## [0.2.0] — 2026-09-07
+
+Refinamiento v2.0. Corresponde a las Entradas #012 y #013 de la
+[bitácora de diseño](docs/BITACORA.md) y a la
+[guía de refinamiento](docs/GUIA_REFINAMIENTO_UX_BALANCE_POC.md).
+
+### Añadido
+
+- **Progresión escalonada del early game.** Tres etapas durante la fase municipal:
+  activista solitario (1-3) con Cuartel y Comisión bloqueados, apertura del
+  colectivo (4) y validación en Oficialía de Partes (6). Campos nuevos:
+  `firmasRecolectadas`, `colectivoDesbloqueado`, `comisionDesbloqueada`,
+  `onboardingCompletado`, `hitoPendiente` y `gacetaPendiente`.
+- **Firmas ciudadanas** como recurso del Art. 71 frac. IV, alimentadas por Movilizar
+  a 9 firmas/hora sin curva de saturación. Meta de la Etapa A: 500.
+- **Prólogo narrativo:** modal de expediente policial con el caso de Gael.
+- **Wizard de onboarding** en cuatro pasos con spotlight, navegación por teclado,
+  opción de omitir y memoria en `localStorage`.
+- **Transición de semana:** bloqueo de 600 ms, sello burocrático con rotación,
+  deltas flotantes y golpe de madera sintetizado en Web Audio, silenciable.
+- **Gaceta Semanal:** pop-up de prensa satírica cada dos semanas con el catálogo
+  completo por fase.
+- **Tooltips** de bancadas y glosario parlamentario, accesibles por cursor, foco
+  de teclado y toque.
+- **Paneles bloqueados** con candado, motivo y cuenta regresiva de semanas.
+- 13 pruebas nuevas en `balance_early_game.test.ts`. Suite total: 82.
+
+### Corregido
+
+- **Estado muerto al aceptar el dictamen mutilado.** El motor marcaba el dictamen
+  como aprobado pero no alineaba los votos ni sellaba el nodo de la comisión. El
+  jugador superaba el Senado y la condición de victoria federal (≥65% de votos en
+  Diputados) quedaba imposible de cumplir para siempre, sin acción disponible para
+  corregirlo. Ahora el trato incluye los votos, que es lo que las bancadas están
+  vendiendo. El arquetipo Pragmático vuelve a ganar, y lo hace con la ley mutilada.
+
+### Cambiado
+
+- Reloj de la congeladora municipal: de 24 a 16 semanas, y arranca en la semana 6.
+- La abogada pro-bono pasa de Sofía a **Mariana Rendón** (Entrada #012).
+- Cadencia de la Gaceta: de 4 a 2 semanas.
+- Node requerido: ≥ 22 (lo exige wrangler 4.x para el despliegue).
+
 ## [0.1.0] — 2026-09-06
 
 Primera prueba de concepto jugable. Corresponde a la Entrada #011 de la
@@ -85,5 +128,6 @@ Primera prueba de concepto jugable. Corresponde a la Entrada #011 de la
 - El Apoyo Social inicial pasó de 25% a 30%: con 25% el primer drenaje semanal detonaba
   el evento de ruptura interna en la semana 1.
 
-[No publicado]: https://github.com/HugoLeMoy47/LegalizalaTycoon/compare/v0.1.0...HEAD
+[No publicado]: https://github.com/HugoLeMoy47/LegalizalaTycoon/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/HugoLeMoy47/LegalizalaTycoon/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/HugoLeMoy47/LegalizalaTycoon/releases/tag/v0.1.0

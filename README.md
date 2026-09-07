@@ -61,10 +61,10 @@ de jugador y sus desenlaces:
 
 | Política | Desenlace típico | Lección |
 | :--- | :--- | :--- |
-| Estratega colectivo | `VICTORIA_DOF` (semana 87) | Delegar y descansar es estrategia |
-| Pragmático | `VICTORIA_DOF` con concesiones | Se puede ganar la foto y perder la ley |
+| Estratega colectivo | `VICTORIA_DOF` (semana 88) | Delegar y descansar es estrategia |
+| Pragmático | `VICTORIA_DOF` mutilada (semana 86) | Se puede ganar la foto y perder la ley |
 | Líder mártir | `DERROTA_BURNOUT` (semana 5) | La autoexplotación no escala |
-| Observador pasivo | `DERROTA_CONGELADORA` (semana 24) | El tiempo parlamentario corre solo |
+| Observador pasivo | `DERROTA_CONGELADORA` (semana 21) | El tiempo parlamentario corre solo |
 
 ### Otros comandos
 
@@ -121,7 +121,7 @@ Cada turno es una semana. El bucle tiene cuatro movimientos:
 
 1. **Reparte tus 40 horas** entre los cuatro verbos operativos:
    *Investigar/Redactar*, *Movilizar*, *Cabildear* y *Autocuidado*.
-2. **Recluta y delega.** Sofía (abogada), Mateo (vocero) y Lupita (enlace de base)
+2. **Recluta y delega.** Mariana (abogada), Mateo (vocero) y Lupita (enlace de base)
    traen sus propias 20 horas semanales, que **no salen de tu resistencia**.
 3. **Cabildea legisladores** uno por uno, gastando Presión Política. Un opositor
    necesita dos sesiones para llegar a "a favor".
@@ -136,6 +136,21 @@ Cada turno es una semana. El bucle tiene cuatro movimientos:
 | **Resistencia** | Tu salud mental y física | Bajo 30% entra la niebla mental; en 0% se acabó |
 | **Solidez Técnica** | Calidad jurídica del articulado | Sin ella te devuelven el dictamen aunque tengas los votos |
 
+### El arranque escalonado (semanas 1 a 6)
+
+La iniciativa ciudadana no entra al Congreso el día 1. El Art. 71 frac. IV exige
+respaldo ciudadano verificable primero, y el juego lo modela con tres etapas:
+
+| Etapa | Semanas | Qué pasa |
+| :--- | :--- | :--- |
+| **A · La recolecta** | 1-3 | Estás solo con 40 hrs. Colectivo y comisión bloqueados, el reloj no corre. Meta: 500 firmas y solidez técnica. |
+| **B · El colectivo** | 4-5 | Mariana, abogada pro-bono, se suma sola atraída por las firmas. Capacidad: 60 hrs/semana. |
+| **C · El cabildo** | 6-30 | Oficialía de Partes valida, sella el expediente y arranca el Reloj de la Congeladora: 16 semanas. |
+
+Es deliberado que las primeras tres semanas se sientan cuesta arriba: ahí es
+donde el juego te deja experimentar en carne propia por qué el activismo
+solitario no escala, antes de darte a nadie con quien repartir la carga.
+
 ### Los tres momentos que definen la partida
 
 * **Semana 48 — Descanso Forzado Obligatorio.** El cuerpo dice basta y quedas
@@ -143,8 +158,9 @@ Cada turno es una semana. El bucle tiene cuatro movimientos:
   sostiene la iniciativa y el reloj legislativo se detiene. Si centralizaste todo,
   pierdes 3 semanas de reloj y 25% de apoyo social. El juego lo resuelve con un
   **Informe de Contingencia**, no con melodrama.
-* **La congeladora.** Cada comisión tiene 12 semanas para dictaminar. Si el reloj
-  llega a cero, el expediente se archiva. No hay votación en contra: hay calendario.
+* **La congeladora.** Cada comisión tiene 12 semanas para dictaminar (16 en el
+  cabildo municipal). Si el reloj llega a cero, el expediente se archiva. No hay
+  votación en contra: hay calendario.
 * **El dictamen mutilado.** Cuando quedan 3 semanas de reloj, las bancadas ofrecen
   aprobar la ley a cambio de quitarle el autocultivo y el presupuesto. Aceptar te
   da la victoria en la foto y una ley sin dientes en el epílogo.
@@ -163,9 +179,21 @@ Cada turno es una semana. El bucle tiene cuatro movimientos:
   que representan) y **las estimaciones en pantalla se distorsionan con sesgo
   pesimista**. El motor sigue calculando bien; el que ya no lee bien eres tú.
 
+* **Prólogo narrativo** — antes del War Room se abre el expediente policial de
+  Gael: la detención arbitraria y la extorsión que detonan la iniciativa.
+* **Onboarding guiado** — cuatro pasos con spotlight sobre el componente que se
+  explica, omitible y recordado entre partidas.
+* **Feedback sensorial** — al cerrar la semana se estampa un sello con golpe de
+  madera sintetizado en Web Audio (silenciable) y flotan los deltas de recursos.
+* **Gaceta Semanal** — cada dos semanas, un recorte de prensa satírica con el
+  folclor político mexicano.
+* **Tooltips** — las bancadas y los términos parlamentarios (Congeladora,
+  Oficialía de Partes, quórum) se explican al pasar el cursor o al tocarlos.
+
 Todos los assets son **procedimentales**: los sellos son CSS con tipografía
-desgastada y doble borde, el mapa es SVG en el DOM y la viñeta es un
-`radial-gradient`. Cero imágenes, bundle de ~74 KB gzip.
+desgastada y doble borde, el mapa es SVG en el DOM, la viñeta es un
+`radial-gradient` y el golpe de sello se sintetiza en el navegador. Cero
+imágenes y cero archivos de audio; bundle de ~83 KB gzip.
 
 ---
 
@@ -200,7 +228,8 @@ Ajustar el balanceo es editar `src/engine/balance.ts` y volver a correr
 | Documento | Contenido |
 | :--- | :--- |
 | [`docs/GDD_Iniciativa_Ciudadana.md`](docs/GDD_Iniciativa_Ciudadana.md) | Game Design Document maestro v1.0 |
-| [`docs/GUIA_AGENTE_DEV_POC.md`](docs/GUIA_AGENTE_DEV_POC.md) | Especificación técnica de la POC (fuente normativa) |
+| [`docs/GUIA_AGENTE_DEV_POC.md`](docs/GUIA_AGENTE_DEV_POC.md) | Especificación técnica de la POC v1.0 (fuente normativa) |
+| [`docs/GUIA_REFINAMIENTO_UX_BALANCE_POC.md`](docs/GUIA_REFINAMIENTO_UX_BALANCE_POC.md) | Especificación de refinamiento v2.0: prólogo, onboarding y early game |
 | [`docs/ARQUITECTURA.md`](docs/ARQUITECTURA.md) | Cómo se implementó y por qué; decisiones de balanceo |
 | [`docs/BITACORA.md`](docs/BITACORA.md) | Memoria histórica de decisiones de diseño |
 | [`docs/PITCH_DECK_Iniciativa_Ciudadana.md`](docs/PITCH_DECK_Iniciativa_Ciudadana.md) | Presentación ejecutiva |

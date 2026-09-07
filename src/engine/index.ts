@@ -14,5 +14,14 @@ export * from './legislativo';
 export * from './disparadores';
 export * from './selectores';
 export { BANCADAS, ORDEN_BANCADAS, type FichaBancada } from './data/bancadas';
-export { PENSAMIENTOS_INTRUSIVOS, ETIQUETAS_DISTORSION, EVENT_DECK } from './data/narrativa';
+export {
+  PENSAMIENTOS_INTRUSIVOS,
+  ETIQUETAS_DISTORSION,
+  EVENT_DECK,
+  TITULARES_GACETA,
+  MEDIOS_FICTICIOS,
+  TOOLTIP_BANCADA,
+  GLOSARIO,
+  PROLOGO,
+} from './data/narrativa';
 export { acotar, formatearPesos, redondear } from './utilidades';

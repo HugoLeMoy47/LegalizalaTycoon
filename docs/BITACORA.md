@@ -175,3 +175,71 @@ Este documento registra la memoria histórica, acuerdos conceptuales, decisiones
   4. Accesibilidad parcial: falta pasada completa de navegación por teclado y contraste AA.
 
 * **Próximo Hito:** Publicación del repositorio, primer despliegue en CDN y sesión de playtesting con usuarios reales para validar el ritmo de la fase estatal y la legibilidad pedagógica del Informe de Contingencia de la Semana 48.
+
+### [2026-09-06] — Entrada #012: Consenso y Especificación de Refinamiento v2.0 (UX, Narrativa y Early Game)
+* **Contexto:** Evaluación post-despliegue de la POC en línea y retroalimentación de la primera experiencia de juego por el Líder de Proyecto. Se identificó la necesidad de atenuar la sobrecarga inicial, dar sentido emocional a la causa y guiar la curva de aprendizaje.
+* **Decisiones Clave de Diseño y Refinamiento v2.0:**
+  1. **Prólogo Narrativo (Incidente Incitador):**
+     - Se aprueba el caso del joven Gael (detención arbitraria por 6 gramos de cannabis y extorsión policial) como catalizador de la epifanía del activista: superar la protesta reactiva y activar el **Artículo 71 Fracción IV Constitucional** (Iniciativa Ciudadana con límite estricto de 100 semanas).
+     - Formato: Modal de "Expediente Confidencial de Caso" previo al ingreso al War Room.
+  2. **Wizard / Onboarding Guiado (Spotlight en 4 Pasos):**
+     - Recorrido focalizado con oscurecimiento del entorno (70% opacidad) que introduce sucesivamente: (1) La Tríada Vital (Apoyo, Presión, Resistencia/Burnout), (2) El presupuesto de 40 hrs y la trampa de horas extra, (3) El selector dual (Expediente vs. Nodos), y (4) El reloj legislativo y el botón de avanzar semana.
+     - Persistencia del estado en `localStorage` y opción de omitir para partidas recurrentes.
+  3. **Feedback Sensorial y Retórica de Medios (Game Feel):**
+     - Micro-animación de transición (600 ms) al avanzar semana con sonido de sello de madera (*Thump*) y visualización de deltas flotantes (+/- recursos).
+     - **Gaceta Matutina:** Pop-up periódico de titulares de prensa satírica que refleja el folclor político mexicano (recesos para barbacoa, granjas de bots, diputados dormidos, chicanadas en el DOF).
+     - Tooltips informativos para describir la idiosincrasia de cada bancada y conceptos parlamentarios (Congeladora, Oficialía de Partes).
+  4. **Progresión Pedagógica y Balance del Early Game (Semanas 1 a 6):**
+     - Se resuelve la deuda técnica del ritmo inicial mediante un **desbloqueo escalonado** fiel a la Ley de Participación Ciudadana:
+       * *Semanas 1 a 3 (Activista Solitario):* Solo el líder activo; paneles de colectivo y comisión bloqueados. Meta: juntar 500 firmas y solidez técnica. El jugador experimenta en carne propia el desgaste de autoexplotarse antes de pisar el Congreso.
+       * *Semana 4 (Hito del Cuartel):* Apertura del colectivo; se suma Mariana (Abogada Pro-bono) con +20 hrs/sem. El jugador aprende a delegar.
+       * *Semana 6 (Oficialía de Partes y Comisión de Gobernación):* Entrada al Cabildo; se desbloquean los diputados/regidores y arranca el Reloj de la Congeladora calibrado a 16 semanas.
+* **Entregable Compilado:** Publicación formal de [`entregables/GUIA_REFINAMIENTO_UX_BALANCE_POC.md`](file:///d:/hugol/OneDrive/01_MarcaPersonal/05_LegalizalaTycoon/entregables/GUIA_REFINAMIENTO_UX_BALANCE_POC.md) con la especificación técnica completa, esquemas de tipos, algoritmos actualizados y prueba de balance headless para el agente desarrollador.
+* **Próximo Hito:** Implementación de las mejoras v2.0 en el código fuente de la POC y re-despliegue en producción.
+
+### [2026-09-07] — Entrada #013: Implementación de la Versión 2.0 (UX, Narrativa y Early Game)
+* **Autor:** Agente Desarrollador (Core Engine & War Room) & Líder de Proyecto.
+* **Hito de Proyecto:** Cierre del *Próximo Hito* declarado en la Entrada #012. Las siete tareas de la lista de verificación de la [`GUIA_REFINAMIENTO_UX_BALANCE_POC.md`](file:///d:/hugol/OneDrive/01_MarcaPersonal/05_LegalizalaTycoon/entregables/GUIA_REFINAMIENTO_UX_BALANCE_POC.md) quedan implementadas y verificadas en navegador.
+* **Contexto de Despliegue:** Previo a esta iteración se publicó el repositorio en `HugoLeMoy47/LegalizalaTycoon` y se configuró el despliegue en Cloudflare Workers con Static Assets (`wrangler.jsonc`, Node 22).
+
+* **1. Progresión Escalonada del Early Game (Motor):**
+  1. **Tres etapas implementadas conforme a la guía:** Etapa A (sem. 1-3, activista solitario con paneles bloqueados), Etapa B (sem. 4, se abre el Cuartel y Mariana se suma sola), Etapa C (sem. 6, Oficialía de Partes valida y arranca el reloj a 16 semanas).
+  2. **Gating consistente del ciclo semanal:** Durante las Etapas A y B no corre el reloj de la congeladora, no se resuelven dictámenes, no se dispara ninguna carta legislativa del Event Deck y —decisión explícita de la guía— la Presión Política todavía no desgasta al Apoyo Social. Antes de la semana 6 no hay expediente en el Congreso: no hay nada de qué sospechar.
+  3. **Orden de evaluación:** Los desbloqueos se aplican **después** de incrementar la semana, de modo que el reloj jamás corra en el mismo turno en que se abre la comisión. Es lo que verifica la prueba de la guía (semana 6 con reloj en 16, semana 7 con reloj en 15).
+  4. **Firmas ciudadanas:** Nuevo recurso alimentado por el verbo Movilizar a 9 firmas/hora, **sin curva de saturación** (una firma es una firma). Calibrado para que 20 hrs/semana durante las tres semanas de la Etapa A den 540 firmas y rebasen la meta de 500 sin obligar a meter horas extra. Quien sí las mete llega a la semana 4 exhausto: esa es exactamente la lección que la guía pedía enseñar en carne propia.
+  5. **Prueba de balance:** `balance_early_game.test.ts` con 13 casos, incluidas las cuatro aserciones textuales de la guía. Suite total: **82 pruebas en verde**.
+
+* **2. Narrativa e Interfaz (Capa de Presentación):**
+  1. **Prólogo del Incidente Incitador:** Modal de expediente policial sobre cartulina manila con sello de "DETENIDO", los cuatro bloques de texto de la guía (Hechos, Epifanía, Mandato, Reloj) y el botón *Asumir el Mandato* que encadena directo al wizard.
+  2. **Wizard de Onboarding:** Cuatro pasos con *spotlight* real —hueco recortado sobre el componente iluminado mediante `box-shadow` expansivo, sin máscaras SVG ni clonado de nodos—, navegación por teclado, opción de omitir y memoria en `localStorage` bajo la clave `tutorial_visto` que la guía nombra explícitamente. Se añadió un botón permanente para repetir el tutorial.
+  3. **Feedback sensorial:** Bloqueo de 600 ms, sello de semana con rotación estable por turno, deltas flotantes en verde/rojo/ámbar (incluidas las firmas y el descuento del reloj) y **golpe de madera sintetizado en Web Audio** —seno grave con caída rápida más chasquido de ruido filtrado— para no añadir un archivo de audio al bundle. Silenciable desde la barra superior.
+  4. **Gaceta Semanal:** Pop-up de recorte de prensa cada dos semanas con el catálogo satírico completo de los tres niveles (barbacoa en sesión, diputado dormido, granjas de bots, cortes de Polanco, fe de erratas del DOF), atribuido a cabeceras ficticias.
+  5. **Tooltips contextuales:** Bancadas y glosario parlamentario (Congeladora, Oficialía de Partes, quórum, dictamen, Pleno, firmas), accesibles con cursor, foco de teclado y toque.
+  6. **Paneles bloqueados con candado:** Colectivo y Comisión muestran el candado, el motivo textual de la guía y la cuenta regresiva de semanas hasta su apertura. No se ocultan: el jugador debe ver el mapa completo del juego desde el día 1; lo que no puede es actuar sobre él todavía.
+
+* **Hallazgo Crítico (la prueba nueva destapó un bug latente):**
+  * Al aceptar el **Dictamen Mutilado**, el motor marcaba `dictamenAprobado = true` pero **no alineaba los votos ni sellaba el nodo** de la comisión. Consecuencia: el jugador superaba el Senado y la condición de victoria federal (≥65% de votos en Diputados) quedaba **imposible de cumplir para siempre**, sin ninguna acción disponible para corregirlo. Era un estado muerto sin salida, no un desbalance.
+  * **Corrección:** el trato ahora incluye los votos, que es precisamente lo que las bancadas están vendiendo cuando ofrecen *"aprobamos tu ley la próxima semana"*. Narrativamente exacto y mecánicamente coherente.
+  * **Efecto en la matriz:** el arquetipo *Pragmático* vuelve a ganar, y ahora lo hace **con la ley mutilada**, que es justo la lección que se le había asignado en la Entrada #011 (*"se puede ganar la foto y perder la ley"*). Antes de la corrección terminaba en congeladora, colapsando dos arquetipos en el mismo desenlace.
+
+* **Matriz de Arquetipos tras la v2.0 (semilla 20260906):**
+  | Política | Desenlace | Semana |
+  | :--- | :--- | ---: |
+  | Estratega colectivo | `VICTORIA_DOF` íntegra | 88 |
+  | Pragmático | `VICTORIA_DOF` mutilada | 86 |
+  | Líder mártir | `DERROTA_BURNOUT` | 5 |
+  | Observador pasivo | `DERROTA_CONGELADORA` | 21 |
+  * El criterio de balanceo de la Entrada #011 se mantiene: cuatro arquetipos, cuatro desenlaces distintos y coherentes con la tesis pedagógica.
+
+* **Ajustes por Realidad Técnica (documentados en `docs/ARQUITECTURA.md` §5):**
+  1. **Rutas y firma de funciones:** La guía plantea `src/core/simulation.ts` con `avanzarSemana(estado): GameState`. El proyecto usa `src/engine/motor.ts` con `avanzarSemana(estado): ResultadoComando`, porque todos los comandos comparten firma y devuelven estado nuevo sin mutar. La prueba usa un helper que desenvuelve el resultado; **las aserciones son las de la guía, sin cambios**.
+  2. **Costo de acciones tempranas:** La guía propone acciones de costo fijo (20 hrs ⇒ +10% Apoyo). Se conservó el modelo continuo con rendimientos decrecientes, que es el que sostiene la matriz de arquetipos validada en la Entrada #011. Lo que sí se calibró al número exacto de la guía fueron las **firmas**, que son la meta real de la etapa.
+  3. **Nombre de la abogada:** El GDD §10 dice *Sofía*; la Entrada #012 dice *Mariana*. Rige la entrada más reciente: **Mariana Rendón**.
+  4. **Reloj municipal:** De 24 a **16 semanas**, valor que la prueba de la guía exige explícitamente.
+
+* **Deuda Técnica Actualizada:**
+  1. El desbloqueo escalonado resolvió el ritmo del **arranque**; falta aplicar la misma idea a los **recesos estatal y federal**, donde un jugador eficiente todavía puede quedarse ~20 semanas sin comisión activa.
+  2. Persiste la ausencia de pruebas de componentes React (la v2.0 se validó manualmente en navegador, verificando el DOM además de las capturas).
+  3. Event Deck sigue corto: cinco cartas, una vez por partida cada una.
+
+* **Próximo Hito:** Re-despliegue en Cloudflare y sesión de playtesting con usuarios reales, ahora sí con el onboarding completo, para medir si las tres primeras semanas transmiten la lección del activista solitario sin resultar frustrantes.

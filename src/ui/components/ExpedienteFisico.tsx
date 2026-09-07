@@ -5,7 +5,7 @@
  * (tipografía Special Elite + doble borde + rotación), sin imágenes.
  */
 
-import { SEMANAS_TOTALES, type GameState, type SelloExpediente } from '../../engine';
+import { META_FIRMAS, SEMANAS_TOTALES, type GameState, type SelloExpediente } from '../../engine';
 
 const FICHA_SELLO: Record<
   SelloExpediente,
@@ -55,25 +55,36 @@ export function ExpedienteFisico({ estado }: { estado: GameState }) {
                 : 'Colectivo ciudadano'
             }
           />
-          <Campo etiqueta="Turnado a" valor={comision?.nombre ?? 'Sin turno vigente'} />
+          <Campo
+            etiqueta="Turnado a"
+            valor={
+              estado.comisionDesbloqueada
+                ? (comision?.nombre ?? 'Sin turno vigente')
+                : 'Sin turnar · pendiente de Oficialía de Partes'
+            }
+          />
           <Campo
             etiqueta="Fecha de sesión"
             valor={`Semana ${estado.semanaActual} de ${SEMANAS_TOTALES}`}
           />
           <Campo
-            etiqueta="Votos en comisión"
+            etiqueta={estado.comisionDesbloqueada ? 'Votos en comisión' : 'Firmas recolectadas'}
             valor={
-              comision
-                ? `${comision.legisladores.filter((l) => l.postura === 'FAVOR').length} de ${comision.votosFavorRequeridos} requeridos`
-                : '—'
+              estado.comisionDesbloqueada
+                ? comision
+                  ? `${comision.legisladores.filter((l) => l.postura === 'FAVOR').length} de ${comision.votosFavorRequeridos} requeridos`
+                  : '—'
+                : `${estado.firmasRecolectadas} de ${META_FIRMAS} requeridas`
             }
           />
           <Campo
             etiqueta="Plazo reglamentario"
             valor={
-              comision && !comision.dictamenAprobado
-                ? `${comision.relojCongeladoraSemanas} semanas restantes`
-                : '—'
+              !estado.comisionDesbloqueada
+                ? 'No corre hasta el turno a comisiones'
+                : comision && !comision.dictamenAprobado
+                  ? `${comision.relojCongeladoraSemanas} semanas restantes`
+                  : '—'
             }
           />
         </dl>
@@ -129,6 +140,9 @@ function Campo({ etiqueta, valor }: { etiqueta: string; valor: string }) {
 
 /** Comentario al margen que refleja el estado real del expediente. */
 function notaMarginal(estado: GameState): string {
+  if (!estado.comisionDesbloqueada) {
+    return '“Borrador de trabajo. Falta acreditar el respaldo ciudadano ante Oficialía de Partes para que el asunto pueda turnarse.”';
+  }
   if (estado.estadoJuego === 'VICTORIA_DOF') {
     return estado.iniciativaMutilada
       ? '“Publicada. Sin autocultivo y sin presupuesto etiquetado. Técnicamente vigente, materialmente decorativa.”'

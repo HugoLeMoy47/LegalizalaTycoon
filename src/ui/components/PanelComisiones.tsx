@@ -2,6 +2,9 @@ import { Banknote, Handshake, Snowflake, Vote } from 'lucide-react';
 
 import {
   BANCADAS,
+  GLOSARIO,
+  SEMANA_DESBLOQUEO_COMISION,
+  TOOLTIP_BANCADA,
   estadoCongeladora,
   formatearPesos,
   semaforoComision,
@@ -10,6 +13,8 @@ import {
   type Legislador,
   type Postura,
 } from '../../engine';
+import { PanelBloqueado } from './PanelBloqueado';
+import { Tooltip } from './Tooltip';
 
 const COLOR_BANCADA: Record<string, string> = {
   guinda: 'border-l-guinda',
@@ -30,6 +35,19 @@ interface Props {
 }
 
 export function PanelComisiones({ estado, despachar }: Props) {
+  // Etapas A y B: la iniciativa aún no está turnada (GUIA v2.0 sección 5.B).
+  if (!estado.comisionDesbloqueada) {
+    return (
+      <PanelBloqueado
+        titulo="Comisión dictaminadora"
+        icono={<Vote className="h-3.5 w-3.5" aria-hidden />}
+        motivo="Iniciativa aún no turnada a comisiones"
+        semanaApertura={SEMANA_DESBLOQUEO_COMISION}
+        semanaActual={estado.semanaActual}
+      />
+    );
+  }
+
   const comision = estado.comisionActiva;
   const votos = semaforoComision(estado);
   const reloj = estadoCongeladora(estado);
@@ -82,6 +100,7 @@ export function PanelComisiones({ estado, despachar }: Props) {
             >
               <Snowflake className="h-3.5 w-3.5" aria-hidden />
               Reloj de la congeladora
+              <Tooltip titulo="Congeladora" contenido={GLOSARIO.CONGELADORA} posicion="abajo" />
             </span>
             <span
               className={`font-tactica text-sm font-semibold tabular-nums ${
@@ -178,9 +197,15 @@ function FichaLegislador({
               </span>
             )}
           </p>
-          <p className="truncate text-[10px] text-slate-500" title={bancada.maña}>
-            {bancada.nombre}
-          </p>
+          <Tooltip
+            titulo={bancada.nombre}
+            contenido={TOOLTIP_BANCADA[legislador.partido] ?? bancada.maña}
+            className="max-w-full"
+          >
+            <span className="truncate text-[10px] text-slate-500 underline decoration-dotted underline-offset-2">
+              {bancada.nombre}
+            </span>
+          </Tooltip>
         </div>
 
         <div className="flex shrink-0 items-center gap-1">

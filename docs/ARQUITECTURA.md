@@ -57,14 +57,18 @@ trabajo de la semana ocurre **antes** de que el cuerpo pase la factura.
 | 0 | Resolución de horas asignadas | ver §3 | `acciones.ts` |
 | 1 | Consumo de horas extra | `resistencia -= (extra/10) × 15 × fatiga` | `motor.ts` |
 | 2 | Drenaje pasivo por fase | `-0.5` / `-1.5` / `-4.0` | `motor.ts` |
-| 3 | Drenaje de apoyo por presión | `apoyo -= presión × 0.05` | `motor.ts` |
+| 3 | Drenaje de apoyo por presión † | `apoyo -= presión × 0.05` | `motor.ts` |
 | 3.1 | Decaimiento de presión política | ver §4.2 (extensión) | `motor.ts` |
-| 3.5 | Reloj legislativo: dictamen y Pleno | — | `legislativo.ts` |
-| 4 | Reloj de la congeladora | `-1` semana; a 0 ⇒ `congelada` | `legislativo.ts` |
+| 3.5 | Reloj legislativo: dictamen y Pleno † | — | `legislativo.ts` |
+| 4 | Reloj de la congeladora † | `-1` semana; a 0 ⇒ `congelada` | `legislativo.ts` |
 | 4.5 | Economía blanda y despachadores por umbral | — | `disparadores.ts` |
 | 5 | Chequeo de niebla mental | `niebla = resistencia < 30` | `motor.ts` |
 | 6 | Incremento de semana | `semanaActual += 1` | `motor.ts` |
-| 6.5 | Transición de fase, Semana 48 y desenlaces | — | `legislativo.ts` |
+| 6.5 | Desbloqueos escalonados, gaceta, fase, Semana 48 y desenlaces | — | `motor.ts` / `legislativo.ts` |
+
+† **v2.0:** estos tres pasos solo corren con `comisionDesbloqueada === true`. Antes
+de la semana 6 no hay expediente en el Congreso, así que no hay reloj que correr,
+ni dictamen que resolver, ni negociación de la que las bases puedan sospechar.
 
 **Nota sobre el orden.** Sumar el rendimiento del autocuidado antes de restar el costo
 de las horas extra es aritméticamente equivalente salvo por el acotado en 0 y 100. Se
@@ -131,7 +135,11 @@ nombres. Lo añadido está agrupado en `types.ts` bajo el comentario `EXTENSIONE
 | `semanasConsecutivasHorasExtra` | Multiplicador de fatiga acumulada (GDD §8). |
 | `reporteSemana48` | Informe de Contingencia (GUÍA 4.A). |
 | `banderas` / `semanaUltimaCarta` | Disparadores de un solo uso y enfriamiento del Event Deck. |
-| `ultimoTurno` | Deltas para el panel de diagnóstico. |
+| `ultimoTurno` | Deltas para el panel de diagnóstico y para los números flotantes de la transición. |
+| `firmasRecolectadas` **(v2.0)** | Respaldo ciudadano del Art. 71 frac. IV. Meta de la Etapa A: 500. |
+| `colectivoDesbloqueado` / `comisionDesbloqueada` **(v2.0)** | Progresión escalonada del early game (§4.3). |
+| `onboardingCompletado` **(v2.0)** | Marca que el jugador recorrió el wizard. Es dato, no comportamiento: el motor no lo lee. |
+| `hitoPendiente` / `gacetaPendiente` **(v2.0)** | Anuncios no bloqueantes que la UI muestra y cierra con `CERRAR_HITO` / `CERRAR_GACETA`. |
 
 ### 4.2 Mecánicas añadidas
 
@@ -167,6 +175,41 @@ activista" (Bitácora #006).
 
 ---
 
+## 4.3 Progresión escalonada del early game (v2.0)
+
+Fuente: `GUIA_REFINAMIENTO_UX_BALANCE_POC.md` §5 y Bitácora #012. Resuelve la
+deuda técnica del ritmo inicial registrada en la Entrada #011.
+
+| Etapa | Semanas | Estado del sistema |
+| :--- | :--- | :--- |
+| A · La recolecta | 1-3 | `colectivoDesbloqueado=false`, `comisionDesbloqueada=false`. El reloj de la congeladora no corre, el drenaje de apoyo por presión no aplica, no se dispara ninguna carta del Event Deck legislativo. Meta: 500 firmas. |
+| B · El colectivo | 4-5 | Se abre el Cuartel y la abogada pro-bono se activa **sola**, sin costo de reclutamiento: la atrajeron las firmas. Capacidad: 60 hrs/semana. |
+| C · El cabildo | 6-30 | Oficialía de Partes valida: se sellan `TURNADO` y `EN_COMISION`, se activa el nodo de la comisión y arranca el reloj a 16 semanas. |
+
+Los desbloqueos se evalúan **después** de incrementar la semana
+(`aplicarDesbloqueosEscalonados`), de modo que el reloj nunca corra en el mismo
+turno en que se abre la comisión. Es lo que verifica la prueba de la guía:
+semana 6 con reloj en 16, semana 7 con reloj en 15.
+
+### Firmas ciudadanas
+
+`firmasRecolectadas` se alimenta del verbo Movilizar a razón de 9 firmas por
+hora, **sin curva de saturación**: una firma es una firma, y el número escala
+con el enlace de base porque es quien abre las asambleas. La tasa está calibrada
+para que 20 hrs/semana durante las tres semanas de la Etapa A (60 hrs) den 540
+firmas, rebasando la meta sin obligar a meter horas extra. Quien sí las mete
+llega a la semana 4 exhausto: esa es la lección.
+
+### Feedback sensorial
+
+`hitoPendiente` y `gacetaPendiente` son anuncios no bloqueantes (a diferencia de
+`decisionPendiente`, que sí impide avanzar la semana). La UI los cierra con los
+comandos `CERRAR_HITO` y `CERRAR_GACETA`. El sonido del sello se sintetiza con
+Web Audio en `src/ui/audio/sello.ts` — un seno grave con caída rápida más un
+chasquido de ruido filtrado — para no añadir un archivo de audio al bundle.
+
+---
+
 ## 5. Desviaciones documentadas respecto de la especificación
 
 | Punto | Especificación | Implementación | Razón |
@@ -177,7 +220,10 @@ activista" (Bitácora #006).
 | Reloj durante el Descanso Forzado | "el reloj no sufre penalización" (con colectivo) vs. "se pierden las 3 semanas" (sin) | Con colectivo el reloj **se congela**; sin colectivo **corre normal** | Es la lectura que hace la diferencia mecánicamente legible. |
 | Derrota por mutilación total | El GDD §1 la lista como condición de derrota | Se resuelve como `VICTORIA_DOF` con `iniciativaMutilada = true` y epílogo distinto | El tipo `EstadoJuego` de la GUÍA no incluye ese estado. La lección pedagógica se entrega en la pantalla final: *"Ganaste la foto, no la reforma."* |
 | Fin de las 100 semanas sin promulgar | No tiene estado propio | `DERROTA_CONGELADORA` | Es lo que ocurre en la realidad: los asuntos no dictaminados se declaran precluidos. |
-| Fase municipal | La congeladora se activa en fase estatal (GDD §5) | El cabildo tiene reloj de **24 semanas** | "Baja burocracia" no significa tiempo infinito: el observador pasivo pierde en la semana 24. |
+| Fase municipal | La congeladora se activa en fase estatal (GDD §5) | El cabildo tiene reloj de **16 semanas**, que arranca en la semana 6 | Valor fijado por la guía v2.0 §5.B. "Baja burocracia" no significa tiempo infinito: el observador pasivo pierde en la semana 21. |
+| Firma de `avanzarSemana` | La guía v2.0 §6 la plantea como `avanzarSemana(estado): GameState` desde `src/core/simulation` | `avanzarSemana(estado): ResultadoComando` en `src/engine/motor.ts` | Todos los comandos comparten firma y devuelven `{estado, ok, mensaje}`. Cambiarla rompería la frontera única del motor y las 82 pruebas. La prueba de balance usa un helper que desenvuelve el resultado; las aserciones son las de la guía. |
+| Costo de acciones tempranas | La guía v2.0 §5.B propone acciones de costo fijo (20 hrs ⇒ +10% Apoyo) | Se conserva el modelo continuo con saturación (20 hrs ⇒ ≈ +5.9% con Apoyo en 30) | El modelo continuo es el que sostiene la matriz de arquetipos validada en la Entrada #011. Lo que sí se calibró al número exacto de la guía son las **firmas**, que son la meta real de la Etapa A. |
+| Nombre de la abogada | El GDD §10 dice **Sofía**; la Bitácora #012 dice **Mariana** | **Mariana Rendón** | La Entrada #012 es posterior y es la que rige el contenido de la v2.0. |
 
 ---
 
@@ -196,10 +242,10 @@ Resultado con la semilla por defecto (20260906):
 
 | Política | Desenlace | Semana | Apoyo | Resistencia |
 | :--- | :--- | ---: | ---: | ---: |
-| Estratega colectivo | `VICTORIA_DOF` | 87 | 45% | 45% |
-| Pragmático | `VICTORIA_DOF` | 87 | 44% | 45% |
-| Líder mártir | `DERROTA_BURNOUT` | 5 | 27% | 0% |
-| Observador pasivo | `DERROTA_CONGELADORA` | 24 | 13% | 89% |
+| Estratega colectivo | `VICTORIA_DOF` | 88 | 44% | 46% |
+| Pragmático | `VICTORIA_DOF` (mutilada) | 86 | 44% | 44% |
+| Líder mártir | `DERROTA_BURNOUT` | 5 | 35% | 0% |
+| Observador pasivo | `DERROTA_CONGELADORA` | 21 | 30% | 90% |
 
 Que los cuatro arquetipos produzcan cuatro desenlaces distintos y coherentes con la
 tesis pedagógica es el criterio de "balanceo correcto" del proyecto.
@@ -219,8 +265,9 @@ arquetipo cambia de desenlace, la lección pedagógica cambió con él.
 | 4 · Victoria / derrota y pantalla del DOF | [`desenlaces.test.ts`](../src/engine/__tests__/desenlaces.test.ts) | ✅ 9 casos |
 | — Disparadores por umbral y dilemas | [`disparadores.test.ts`](../src/engine/__tests__/disparadores.test.ts) | ✅ 16 casos |
 | — Pureza, inmutabilidad y determinismo | [`pureza.test.ts`](../src/engine/__tests__/pureza.test.ts) | ✅ 10 casos |
+| v2.0 · Progresión escalonada del early game | [`balance_early_game.test.ts`](../src/engine/__tests__/balance_early_game.test.ts) | ✅ 13 casos |
 
-**69 pruebas, sin navegador, ~8 segundos.**
+**82 pruebas, sin navegador, ~8 segundos.**
 
 ---
 
@@ -266,15 +313,18 @@ Cosas que un equipo debería atender antes de considerar esto algo más que una 
 
 1. **Recesos largos entre fases.** Un jugador eficiente puede resolver la instancia
    estatal en ~10 semanas y quedarse ~20 semanas sin comisión activa. Es fiel al
-   calendario legislativo real, pero como ritmo de juego es plano. Candidatos:
-   objetivos intermedios de fase, litigio estratégico o campaña de firmas.
+   calendario legislativo real, pero como ritmo de juego es plano. La v2.0 resolvió
+   el arranque con el desbloqueo escalonado (§4.3); falta aplicar la misma idea a
+   los recesos estatal y federal: objetivos intermedios, litigio estratégico o
+   campañas de firmas por fase.
 2. **Sin pruebas de componentes React.** El motor está cubierto al detalle; la UI se
    validó manualmente en navegador. Faltaría Testing Library para los flujos de modal
    y vista dual.
 3. **Event Deck corto.** Cinco cartas, una vez por partida cada una. El GDD contempla
    un catálogo mayor.
 4. **Accesibilidad parcial.** Hay `role`, `aria-label` y `aria-live` en los puntos
-   clave, y `prefers-reduced-motion` desactiva las animaciones, pero falta una pasada
-   completa de navegación por teclado y contraste AA.
+   clave, `prefers-reduced-motion` desactiva las animaciones, los tooltips responden
+   a foco y toque, y el wizard se navega con flechas y Escape. Falta una pasada
+   completa de navegación por teclado y de contraste AA.
 5. **Sin internacionalización.** Los textos están embebidos en español mexicano, que
    es parte del diseño; extraerlos costaría trabajo si algún día se traduce.

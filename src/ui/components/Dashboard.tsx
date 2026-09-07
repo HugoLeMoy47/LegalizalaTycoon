@@ -90,7 +90,7 @@ export function Dashboard({ estado }: { estado: GameState }) {
         </p>
       )}
 
-      <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 lg:grid-cols-4">
+      <div data-tour="triada" className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 lg:grid-cols-4">
         <BarraRecurso
           etiqueta="Apoyo social"
           valor={recursos.apoyoSocial}

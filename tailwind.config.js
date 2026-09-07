@@ -55,11 +55,23 @@ export default {
           '15%, 75%': { opacity: '0.85', transform: 'translateY(0)' },
           '100%': { opacity: '0', transform: 'translateY(-14px)' },
         },
+        // Deltas de la transición de semana: emergen y se desvanecen hacia arriba.
+        flotarDelta: {
+          '0%': { opacity: '0', transform: 'translateY(16px) scale(0.9)' },
+          '25%, 65%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+          '100%': { opacity: '0', transform: 'translateY(-22px) scale(1)' },
+        },
+        aparecer: {
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
       },
       animation: {
         sello: 'sello 420ms cubic-bezier(.2,.9,.3,1.2) both',
         'pulso-rojo': 'pulsoRojo 1.8s ease-out infinite',
         intrusiva: 'derivaIntrusiva 9s ease-in-out infinite',
+        delta: 'flotarDelta 1.5s ease-out both',
+        aparecer: 'aparecer 260ms ease-out both',
       },
     },
   },

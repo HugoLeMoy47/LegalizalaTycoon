@@ -35,7 +35,7 @@ export function VistaDual({ estado }: { estado: GameState }) {
 
   return (
     <section className="panel overflow-hidden">
-      <div className="flex items-center gap-1 border-b border-pizarra-600/70 px-3 py-2">
+      <div data-tour="vista-dual" className="flex items-center gap-1 border-b border-pizarra-600/70 px-3 py-2">
         <Pestaña
           activa={vista === 'EXPEDIENTE'}
           onClick={() => setVista('EXPEDIENTE')}

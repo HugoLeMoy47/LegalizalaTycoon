@@ -3,6 +3,7 @@ import type { LucideIcon } from 'lucide-react';
 
 import {
   ETIQUETA_VERBO,
+  SEMANA_DESBLOQUEO_COLECTIVO,
   VERBOS,
   formatearPesos,
   type ComandoJuego,
@@ -11,6 +12,7 @@ import {
   type RolColectivo,
   type VerboAccion,
 } from '../../engine';
+import { PanelBloqueado } from './PanelBloqueado';
 
 const ICONO_ROL: Record<RolColectivo, LucideIcon> = {
   LIDER: Users,
@@ -33,6 +35,19 @@ interface Props {
 
 export function PanelColectivo({ estado, despachar }: Props) {
   const aliados = estado.colectivo.filter((m) => m.rol !== 'LIDER');
+
+  // Etapa A: el jugador todavía es una sola persona (GUIA v2.0 sección 5.B).
+  if (!estado.colectivoDesbloqueado) {
+    return (
+      <PanelBloqueado
+        titulo="Cuartel del colectivo"
+        icono={<Users className="h-3.5 w-3.5" aria-hidden />}
+        motivo="Requiere base social mínima"
+        semanaApertura={SEMANA_DESBLOQUEO_COLECTIVO}
+        semanaActual={estado.semanaActual}
+      />
+    );
+  }
 
   return (
     <section className="panel">
