@@ -19,7 +19,8 @@
     "sim": "tsx src/sim/headless.ts",
     "sim:matriz": "tsx src/sim/headless.ts --matriz",
     "verify": "npm run lint && npm run test && npm run build",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "sim:huecos": "tsx src/sim/huecos.ts"
   },
   "dependencies": {
     "lucide-react": "^0.454.0",
