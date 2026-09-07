@@ -16,6 +16,8 @@ interface PasoWizard {
   objetivo: string;
   titulo: string;
   cuerpo: React.ReactNode;
+  /** Pasos que solo tienen sentido en una de las dos composiciones. */
+  soloEn?: 'movil' | 'escritorio';
 }
 
 const PASOS: PasoWizard[] = [
@@ -36,6 +38,32 @@ const PASOS: PasoWizard[] = [
           <b className="text-favor">Resistencia:</b> tu salud mental.{' '}
           <b className="text-opositor">Si llega a 0% colapsas por burnout</b> y el movimiento se
           desintegra. Debajo de 30% sufrirás Niebla Mental.
+        </li>
+      </ul>
+    ),
+  },
+  {
+    objetivo: 'pestanas',
+    soloEn: 'movil',
+    titulo: 'Las cuatro secciones del tablero',
+    cuerpo: (
+      <ul className="space-y-1.5">
+        <li>
+          <b className="text-papel-100">Operación:</b> donde repartes tus horas de la semana y
+          armas tu colectivo. Es tu mesa de trabajo.
+        </li>
+        <li>
+          <b className="text-papel-100">Comisión:</b> los legisladores que deciden si tu iniciativa
+          avanza, con su color de bancada y su postura. Se abre cuando el expediente entre al
+          Congreso.
+        </li>
+        <li>
+          <b className="text-papel-100">Expediente:</b> por dónde va tu ley. Puedes verlo como
+          carpeta con sellos oficiales o como mapa de la ruta completa.
+        </li>
+        <li>
+          <b className="text-papel-100">Bitácora:</b> tu meta actual y todo lo que ha pasado,
+          semana por semana.
         </li>
       </ul>
     ),
@@ -71,6 +99,29 @@ const PASOS: PasoWizard[] = [
     ),
   },
   {
+    objetivo: 'guia-turno',
+    titulo: 'Qué hacer cada semana',
+    cuerpo: (
+      <>
+        <p>Esta guía te acompaña toda la partida y siempre dice qué te toca ahora:</p>
+        <ol className="mt-2 space-y-1">
+          <li>
+            <b className="text-papel-100">① Reparte tus horas</b> entre las tareas.
+          </li>
+          <li>
+            <b className="text-papel-100">② Convence legisladores</b>, cuando ya haya comisión.
+          </li>
+          <li>
+            <b className="text-papel-100">③ Cierra la semana.</b>
+          </li>
+        </ol>
+        <p className="mt-2">
+          Los pasos se marcan solos y los que no aplican se tachan. Si te pierdes, mira aquí.
+        </p>
+      </>
+    ),
+  },
+  {
     objetivo: 'avanzar',
     titulo: 'El reloj de la legislatura',
     cuerpo: (
@@ -99,6 +150,8 @@ interface Rect {
 
 interface Props {
   onTerminar: () => void;
+  /** Composición activa: filtra los pasos que solo existen en una de las dos. */
+  esMovil?: boolean;
   /**
    * Avisa qué objetivo se está iluminando. En móvil el tablero vive en
    * pestañas, así que la app tiene que abrir la que contiene el objetivo antes
@@ -107,10 +160,15 @@ interface Props {
   onObjetivo?: (objetivo: string) => void;
 }
 
-export function WizardOnboarding({ onTerminar, onObjetivo }: Props) {
+export function WizardOnboarding({ onTerminar, onObjetivo, esMovil = false }: Props) {
   const [indice, setIndice] = useState(0);
   const [rect, setRect] = useState<Rect | null>(null);
-  const paso = PASOS[indice];
+
+  const pasos = useMemo(
+    () => PASOS.filter((p) => !p.soloEn || p.soloEn === (esMovil ? 'movil' : 'escritorio')),
+    [esMovil],
+  );
+  const paso = pasos[Math.min(indice, pasos.length - 1)];
 
   useEffect(() => {
     onObjetivo?.(paso.objetivo);
@@ -165,15 +223,15 @@ export function WizardOnboarding({ onTerminar, onObjetivo }: Props) {
     const teclas = (evento: KeyboardEvent) => {
       if (evento.key === 'Escape') onTerminar();
       if (evento.key === 'ArrowRight' || evento.key === 'Enter') {
-        setIndice((i) => (i + 1 < PASOS.length ? i + 1 : i));
+        setIndice((i) => (i + 1 < pasos.length ? i + 1 : i));
       }
       if (evento.key === 'ArrowLeft') setIndice((i) => Math.max(0, i - 1));
     };
     document.addEventListener('keydown', teclas);
     return () => document.removeEventListener('keydown', teclas);
-  }, [onTerminar]);
+  }, [onTerminar, pasos.length]);
 
-  const esUltimo = indice === PASOS.length - 1;
+  const esUltimo = indice === pasos.length - 1;
   const siguiente = () => (esUltimo ? onTerminar() : setIndice((i) => i + 1));
 
   // La tarjeta va debajo del hueco salvo que no quepa; siempre dentro del viewport.
@@ -217,7 +275,7 @@ export function WizardOnboarding({ onTerminar, onObjetivo }: Props) {
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="etiqueta text-olivo-400">
-              Paso {indice + 1} de {PASOS.length}
+              Paso {indice + 1} de {pasos.length}
             </p>
             <h2 className="mt-0.5 font-tactica text-base font-semibold leading-tight text-papel-100">
               {paso.titulo}
@@ -237,7 +295,7 @@ export function WizardOnboarding({ onTerminar, onObjetivo }: Props) {
 
         <div className="mt-4 flex items-center justify-between gap-3">
           <div className="flex gap-1.5" aria-hidden>
-            {PASOS.map((p, i) => (
+            {pasos.map((p, i) => (
               <span
                 key={p.objetivo}
                 className={`h-1.5 rounded-full transition-all ${

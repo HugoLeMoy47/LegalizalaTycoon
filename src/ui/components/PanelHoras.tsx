@@ -11,6 +11,7 @@ import {
   estimacionMostrada,
   horasDisponibles,
   multiplicadorFatiga,
+  verboDisponible,
   type ComandoJuego,
   type GameState,
   type VerboAccion,
@@ -65,15 +66,18 @@ export function PanelHoras({ estado, despachar }: Props) {
       <div className="divide-y divide-pizarra-700/70">
         {VERBOS.map((verbo) => {
           const horas = estado.asignaciones[verbo];
+          const bloqueado = !verboDisponible(estado, verbo);
           return (
-            <div key={verbo} className="px-4 py-2.5">
+            <div key={verbo} className={`px-4 py-2.5 ${bloqueado ? 'opacity-50' : ''}`}>
               <div className="flex items-center gap-3">
                 <div className="min-w-0 flex-1">
                   <p className="font-tactica text-xs font-semibold text-slate-200">
                     {ETIQUETA_VERBO[verbo]}
                   </p>
                   <p className="mt-0.5 text-[11px] leading-snug text-slate-500">
-                    {DESCRIPCION_VERBO[verbo]}
+                    {bloqueado
+                      ? 'Todavía no hay expediente en el Congreso: no hay a quién cabildear.'
+                      : DESCRIPCION_VERBO[verbo]}
                   </p>
                 </div>
 
@@ -82,7 +86,7 @@ export function PanelHoras({ estado, despachar }: Props) {
                     type="button"
                     className="boton boton-tactil px-2 py-1"
                     onClick={() => ajustar(verbo, -PASO_HORAS)}
-                    disabled={enDescanso || horas <= 0}
+                    disabled={bloqueado || enDescanso || horas <= 0}
                     aria-label={`Quitar horas a ${ETIQUETA_VERBO[verbo]}`}
                   >
                     <Minus className="h-3 w-3" aria-hidden />
@@ -94,7 +98,7 @@ export function PanelHoras({ estado, despachar }: Props) {
                     type="button"
                     className="boton boton-tactil px-2 py-1"
                     onClick={() => ajustar(verbo, PASO_HORAS)}
-                    disabled={enDescanso || disponibles < PASO_HORAS}
+                    disabled={bloqueado || enDescanso || disponibles < PASO_HORAS}
                     aria-label={`Añadir horas a ${ETIQUETA_VERBO[verbo]}`}
                   >
                     <Plus className="h-3 w-3" aria-hidden />

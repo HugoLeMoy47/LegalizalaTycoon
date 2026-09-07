@@ -7,7 +7,7 @@
  * acción abajo.
  */
 
-import { FileText, Newspaper, SlidersHorizontal, Vote } from 'lucide-react';
+import { FileText, Lock, Newspaper, SlidersHorizontal, Vote } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 export type PestanaMovil = 'OPERACION' | 'COMISION' | 'EXPEDIENTE' | 'BITACORA';
@@ -30,11 +30,23 @@ interface Props {
   onCambiar: (pestana: PestanaMovil) => void;
   /** Pestañas con acción pendiente esta semana; se marcan con un punto. */
   conPendiente?: PestanaMovil[];
+  /**
+   * Pestañas cuyo contenido aún no se desbloquea. **Siguen siendo navegables**:
+   * el panel de adentro explica el candado y en qué semana se abre. Impedir la
+   * entrada hacía que tocar la pestaña pareciera un error de la aplicación.
+   */
+  bloqueadas?: PestanaMovil[];
 }
 
-export function PestanasMovil({ activa, onCambiar, conPendiente = [] }: Props) {
+export function PestanasMovil({
+  activa,
+  onCambiar,
+  conPendiente = [],
+  bloqueadas = [],
+}: Props) {
   return (
     <nav
+      data-tour="pestanas"
       className="flex border-b border-pizarra-600/70 bg-pizarra-800/95"
       role="tablist"
       aria-label="Secciones del tablero"
@@ -51,7 +63,11 @@ export function PestanasMovil({ activa, onCambiar, conPendiente = [] }: Props) {
             className={`pestana-movil ${esActiva ? 'pestana-movil-activa' : 'pestana-movil-inactiva'}`}
           >
             <span className="relative">
-              <Icono className="h-4 w-4" aria-hidden />
+              {bloqueadas.includes(id) ? (
+                <Lock className="h-4 w-4 opacity-60" aria-hidden />
+              ) : (
+                <Icono className="h-4 w-4" aria-hidden />
+              )}
               {conPendiente.includes(id) && !esActiva && (
                 <span
                   className="absolute -right-1 -top-0.5 h-1.5 w-1.5 rounded-full bg-olivo-400"

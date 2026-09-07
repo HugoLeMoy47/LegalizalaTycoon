@@ -59,6 +59,20 @@ function exito(estado: GameState): ResultadoComando {
 // Reparto de horas
 // ---------------------------------------------------------------------------
 
+/**
+ * Cabildear no existe antes de que la iniciativa esté turnada.
+ *
+ * La guía v2.0 §5.B enumera solo tres acciones para la Etapa A —recolectar
+ * firmas, redactar técnica jurídica y descansar—, y con razón: no hay
+ * expediente, así que no hay a quién presionar. Permitirlo dejaba al jugador
+ * embotellar Presión Política durante cinco semanas y resolver el cabildo
+ * completo en un solo turno.
+ */
+export function verboDisponible(estado: GameState, verbo: VerboAccion): boolean {
+  if (verbo === 'CABILDEAR') return estado.comisionDesbloqueada;
+  return true;
+}
+
 export function asignarHoras(
   estado: GameState,
   verbo: VerboAccion,
@@ -66,6 +80,12 @@ export function asignarHoras(
 ): ResultadoComando {
   if (estado.estadoJuego === 'DESCANSO_FORZADO_SEM_48') {
     return rechazo(estado, 'Descanso Forzado: el líder no puede recibir horas esta semana.');
+  }
+  if (!verboDisponible(estado, verbo)) {
+    return rechazo(
+      estado,
+      'Todavía no hay expediente en el Congreso: no hay a quién cabildear. Junta firmas y blinda el texto.',
+    );
   }
   const solicitadas = Math.max(0, Math.round(horas));
   const otras = VERBOS.filter((v) => v !== verbo).reduce((s, v) => s + estado.asignaciones[v], 0);
@@ -88,6 +108,9 @@ export function asignarHorasAliado(
   if (!miembro) return rechazo(estado, 'Ese perfil no existe en el colectivo.');
   if (miembro.rol === 'LIDER') return rechazo(estado, 'Las horas del líder se reparten aparte.');
   if (!miembro.activo) return rechazo(estado, `${miembro.nombre} todavía no está en el colectivo.`);
+  if (verbo !== null && !verboDisponible(estado, verbo)) {
+    return rechazo(estado, 'Todavía no hay expediente en el Congreso: no hay a quién cabildear.');
+  }
 
   const solicitadas = Math.max(0, Math.min(Math.round(horas), miembro.capacidadHoras));
   miembro.horasAsignadas = verbo === null ? 0 : solicitadas;

@@ -14,7 +14,7 @@
  *   el fondo; el juego se diseñó para jugarse principalmente en el teléfono.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ChevronRight, GraduationCap, Info, RotateCcw, Target, Volume2, VolumeX } from 'lucide-react';
 
 import {
@@ -53,6 +53,8 @@ const PESTANA_DEL_TUTORIAL: Record<string, PestanaMovil | null> = {
   triada: null, // vive en la cabecera fija
   horas: 'OPERACION',
   'vista-dual': 'EXPEDIENTE',
+  pestanas: null, // la barra de pestañas siempre está a la vista
+  'guia-turno': null, // vive en la barra de acción fija
   avanzar: null, // vive en la barra de acción fija
 };
 
@@ -92,12 +94,6 @@ export function App() {
     },
     [],
   );
-
-  // Si la comisión se bloquea o desbloquea, no dejes al jugador en una pestaña
-  // que ya no tiene sentido.
-  useEffect(() => {
-    if (pestana === 'COMISION' && !estado.comisionDesbloqueada) setPestana('OPERACION');
-  }, [pestana, estado.comisionDesbloqueada]);
 
   const pasos = pasosDelTurno(estado);
   const pendientes: PestanaMovil[] = [];
@@ -141,7 +137,11 @@ export function App() {
         />
       )}
       {mostrarWizard && (
-        <WizardOnboarding onTerminar={terminarTutorial} onObjetivo={alCambiarPasoTutorial} />
+        <WizardOnboarding
+          onTerminar={terminarTutorial}
+          onObjetivo={alCambiarPasoTutorial}
+          esMovil={esMovil}
+        />
       )}
       {mostrarPrologo && <PrologoModal onAsumir={asumirMandato} />}
 
@@ -170,7 +170,12 @@ export function App() {
           <div className="relative z-20 shrink-0">
             <BarraSuperior compacta reiniciar={reiniciar} repetirTutorial={repetirTutorial} />
             <DashboardCompacto estado={estado} />
-            <PestanasMovil activa={pestana} onCambiar={setPestana} conPendiente={pendientes} />
+            <PestanasMovil
+              activa={pestana}
+              onCambiar={setPestana}
+              conPendiente={pendientes}
+              bloqueadas={estado.comisionDesbloqueada ? [] : ['COMISION']}
+            />
           </div>
 
           <main className="relative z-10 min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
