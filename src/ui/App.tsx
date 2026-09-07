@@ -31,6 +31,7 @@ import {
   META_FIRMAS,
   SEMANAS_TOTALES,
   checklistVictoria,
+  eventosSinLeer,
   pasosDelTurno,
   type ComandoJuego,
   type GameState,
@@ -104,6 +105,7 @@ export function App() {
     [],
   );
 
+  const sinLeer = eventosSinLeer(estado);
   const pasos = pasosDelTurno(estado);
   const pendientes: PestanaMovil[] = [];
   if (pasos[0].disponible && !pasos[0].hecho) pendientes.push('OPERACION');
@@ -119,6 +121,7 @@ export function App() {
           totalSemanas={SEMANAS_TOTALES}
           relojCongeladora={transicion.relojCongeladora}
           avance={transicion.avance}
+          sucesos={transicion.sucesos}
           onFinalizar={limpiarTransicion}
         />
       )}
@@ -128,16 +131,16 @@ export function App() {
           onCerrar={() => despachar({ tipo: 'CERRAR_GACETA' })}
         />
       )}
-      {estado.hitoPendiente && (
+      {estado.hitoPendiente && !transicion && (
         <HitoModal hito={estado.hitoPendiente} onCerrar={() => despachar({ tipo: 'CERRAR_HITO' })} />
       )}
-      {estado.decisionPendiente && (
+      {estado.decisionPendiente && !transicion && (
         <ModalDecision decision={estado.decisionPendiente} despachar={despachar} />
       )}
-      {mostrarReporte48 && estado.reporteSemana48 && (
+      {mostrarReporte48 && !transicion && estado.reporteSemana48 && (
         <ReporteSemana48 reporte={estado.reporteSemana48} />
       )}
-      {!enJuego && (
+      {!enJuego && !transicion && (
         <PantallaDesenlace
           estado={estado}
           reiniciar={() => {
@@ -155,7 +158,7 @@ export function App() {
       )}
       {mostrarPrologo && <PrologoModal onAsumir={asumirMandato} />}
 
-      <div className="pointer-events-none fixed bottom-24 left-1/2 z-[65] w-full max-w-md -translate-x-1/2 space-y-2 px-4 xl:bottom-4">
+      <div className="pointer-events-none fixed bottom-24 left-1/2 z-[76] w-full max-w-md -translate-x-1/2 space-y-2 px-4 xl:bottom-4">
         {avisos.map((aviso) => (
           <p
             key={aviso.id}
@@ -185,6 +188,7 @@ export function App() {
               onCambiar={setPestana}
               conPendiente={pendientes}
               bloqueadas={estado.comisionDesbloqueada ? [] : ['COMISION']}
+              novedades={{ BITACORA: sinLeer.length }}
             />
           </div>
 
@@ -200,7 +204,7 @@ export function App() {
             {pestana === 'BITACORA' && (
               <>
                 <PanelObjetivo estado={estado} />
-                <Bitacora estado={estado} />
+                <Bitacora estado={estado} despachar={despachar} marcarLeidasAlVer />
               </>
             )}
           </main>

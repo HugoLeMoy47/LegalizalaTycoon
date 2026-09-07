@@ -16,7 +16,7 @@ export function ReporteSemana48({ reporte }: { reporte: ReporteColectivo }) {
 
   return (
     <div
-      className="fixed inset-0 z-[55] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[62] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="titulo-reporte-48"

@@ -186,7 +186,7 @@ export function Dashboard({ estado }: { estado: GameState }) {
           icono={Landmark}
           tono="presion"
           umbral={{ valor: UMBRAL_ALERTA_REGIMEN, etiqueta: 'Alerta del régimen' }}
-          ayuda="Capacidad de mover votos y agendar dictámenes. Arriba de 80% despiertas al aparato."
+          ayuda={`Capacidad de mover votos y agendar dictámenes. Cuidado: cada semana te cuesta ${(estado.recursos.presionPolitica * 0.05).toFixed(1)}% de Apoyo Social sostenerla, y arriba de 80% despiertas al aparato del Estado.`}
         />
         <BarraRecurso
           etiqueta="Resistencia"

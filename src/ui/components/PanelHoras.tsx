@@ -1,4 +1,4 @@
-import { AlarmClockPlus, ChevronRight, Flame, Minus, Plus, Timer } from 'lucide-react';
+import { AlarmClockPlus, ChevronRight, Flame, Minus, Plus, Timer, TrendingDown } from 'lucide-react';
 
 import {
   BLOQUE_HORAS_EXTRA,
@@ -8,6 +8,7 @@ import {
   MAX_BLOQUES_HORAS_EXTRA,
   VERBOS,
   calcularRendimiento,
+  costoPolitico,
   estimacionMostrada,
   horasDisponibles,
   multiplicadorFatiga,
@@ -29,6 +30,8 @@ export function PanelHoras({ estado, despachar }: Props) {
   const bloquesExtra = estado.recursos.horasExtraMetidas / BLOQUE_HORAS_EXTRA;
   const enDescanso = estado.estadoJuego === 'DESCANSO_FORZADO_SEM_48';
   const proyeccion = calcularRendimiento(estado);
+  const costo = costoPolitico(estado);
+  const presion = estado.recursos.presionPolitica;
   const niebla = estado.nieblaMentalActiva;
   const fatigaSiguiente = multiplicadorFatiga(estado.semanasConsecutivasHorasExtra + 1);
 
@@ -112,6 +115,34 @@ export function PanelHoras({ estado, despachar }: Props) {
                   Proyección: {proyectado[verbo]}
                   {niebla && <span className="text-opositor/80"> (lectura poco confiable)</span>}
                 </p>
+              )}
+
+              {/*
+               * El costo político del cabildeo se pagaba dos veces y solo se
+               * veía una: las horas queman capital social mientras negocias, y
+               * la presión acumulada lo sigue quemando cada semana aunque no
+               * hagas nada. Sin esto el jugador no entendía por qué su apoyo
+               * bajaba solo.
+               */}
+              {verbo === 'CABILDEAR' && !bloqueado && costo.activo && (
+                <div className="mt-2 rounded border border-alerta/30 bg-alerta/5 px-2.5 py-1.5">
+                  <p className="flex items-center gap-1 font-tactica text-[10px] uppercase tracking-[0.1em] text-alerta">
+                    <TrendingDown className="h-3 w-3" aria-hidden />
+                    Costo político · −{costo.totalSemanal}% de apoyo esta semana
+                  </p>
+                  <ul className="mt-1 space-y-0.5 text-[10px] leading-snug text-slate-500">
+                    {horas > 0 && (
+                      <li>
+                        −{costo.porHorasAsignadas}% por negociar en los pasillos ({horas} hrs ×{' '}
+                        {costo.porHoraDeCabildeo})
+                      </li>
+                    )}
+                    <li>
+                      −{costo.porPresionSostenida}% por sostener {Math.round(presion)}% de presión:
+                      las bases desconfían de quien pasa el día en el Congreso
+                    </li>
+                  </ul>
+                </div>
               )}
             </div>
           );

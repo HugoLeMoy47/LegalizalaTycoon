@@ -8,7 +8,24 @@
 
 import { useEffect, useMemo, useState } from 'react';
 
-import type { FaseJuego, MotivoParada, ResumenAvance, ResumenTurno } from '../../engine';
+import type {
+  FaseJuego,
+  MotivoParada,
+  RegistroEvento,
+  ResumenAvance,
+  ResumenTurno,
+  TipoEvento,
+} from '../../engine';
+
+const COLOR_SUCESO: Record<TipoEvento, string> = {
+  SISTEMA: 'text-slate-300',
+  GACETA: 'text-sky-400',
+  CRISIS: 'text-opositor',
+  LOGRO: 'text-favor',
+  ADVERTENCIA: 'text-alerta',
+  DECISION: 'text-papel-200',
+  DESENLACE: 'text-papel-100',
+};
 
 const MOTIVO: Record<MotivoParada, string> = {
   DECISION: 'Hay un dilema sobre la mesa',
@@ -43,6 +60,8 @@ interface Props {
   relojCongeladora: number | null;
   /** Resumen de la corrida cuando abarcó varias semanas. */
   avance?: ResumenAvance | null;
+  /** Sucesos notables ocurridos durante la corrida. */
+  sucesos?: RegistroEvento[];
   /**
    * Se llama al terminar la animación. Sin esto la transición quedaría marcada
    * como activa para siempre y bloquearía el pop-up de la Gaceta.
@@ -56,6 +75,7 @@ export function TransicionSemana({
   totalSemanas,
   relojCongeladora,
   avance,
+  sucesos = [],
   onFinalizar,
 }: Props) {
   const [visible, setVisible] = useState(true);
@@ -64,12 +84,13 @@ export function TransicionSemana({
   const rotacion = useMemo(() => ((semanaEntrante * 37) % 9) - 4, [semanaEntrante]);
 
   useEffect(() => {
+    const extra = sucesos.length > 0 ? 1600 : 0;
     const t = setTimeout(() => {
       setVisible(false);
       onFinalizar();
-    }, DURACION_TRANSICION_MS + 900);
+    }, DURACION_TRANSICION_MS + 900 + extra);
     return () => clearTimeout(t);
-  }, [onFinalizar]);
+  }, [onFinalizar, sucesos.length]);
 
   if (!visible) return null;
 
@@ -92,7 +113,7 @@ export function TransicionSemana({
 
   return (
     <div
-      className="pointer-events-none fixed inset-0 z-[75] flex flex-col items-center justify-center gap-6"
+      className="pointer-events-none fixed inset-0 z-[58] flex flex-col items-center justify-center gap-6"
       role="status"
       aria-live="polite"
     >
@@ -111,6 +132,34 @@ export function TransicionSemana({
         <p className="animate-delta -mt-3 font-tactica text-[11px] uppercase tracking-[0.14em] text-slate-400">
           {avance.semanasCorridas} semanas corridas · {MOTIVO[avance.motivo]}
         </p>
+      )}
+
+      {/*
+       * Qué pasó durante la corrida. Sin esto los sucesos quedaban enterrados
+       * en la bitácora y el jugador avanzaba sin enterarse de nada.
+       */}
+      {sucesos.length > 0 && (
+        <ul className="mx-auto max-w-md space-y-1 px-6">
+          {sucesos.slice(0, 4).map((suceso, indice) => (
+            <li
+              key={`${suceso.semana}-${suceso.titulo}`}
+              className="animate-delta flex items-baseline gap-2 rounded bg-pizarra-900/80 px-3 py-1.5 text-left"
+              style={{ animationDelay: `${indice * 110}ms`, animationFillMode: 'both' }}
+            >
+              <span className="font-tactica text-[10px] tabular-nums text-slate-500">
+                S{suceso.semana}
+              </span>
+              <span className={`font-tactica text-[11px] font-semibold ${COLOR_SUCESO[suceso.tipo]}`}>
+                {suceso.titulo}
+              </span>
+            </li>
+          ))}
+          {sucesos.length > 4 && (
+            <li className="animate-delta text-center font-tactica text-[10px] uppercase tracking-[0.14em] text-olivo-400">
+              +{sucesos.length - 4} más en la bitácora
+            </li>
+          )}
+        </ul>
       )}
 
       {/* Deltas flotantes */}

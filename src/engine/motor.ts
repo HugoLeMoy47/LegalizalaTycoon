@@ -392,6 +392,7 @@ export function avanzarSemana(estadoOriginal: GameState): ResultadoComando {
 
   const estado = clonarEstado(estadoOriginal);
   estado.ultimoAvance = null;
+  estado.registroLeidoHasta = estado.registro.length;
   procesarSemana(estado);
   return { estado, ok: true };
 }
@@ -447,6 +448,7 @@ export function avanzarHastaEvento(
   };
 
   const estado = clonarEstado(estadoOriginal);
+  estado.registroLeidoHasta = estado.registro.length;
   const tope = Math.max(1, Math.min(maximoSemanas, MAXIMO_SEMANAS_POR_AVANCE));
   let corridas = 0;
   let motivo: MotivoParada = 'LIMITE';
@@ -534,6 +536,9 @@ export function ejecutarComando(
       return { estado, ok: true };
     case 'COMPLETAR_ONBOARDING':
       estado.onboardingCompletado = true;
+      return { estado, ok: true };
+    case 'MARCAR_BITACORA_LEIDA':
+      estado.registroLeidoHasta = estado.registro.length;
       return { estado, ok: true };
     default:
       return { estado: estadoOriginal, ok: false, mensaje: 'Comando desconocido.' };

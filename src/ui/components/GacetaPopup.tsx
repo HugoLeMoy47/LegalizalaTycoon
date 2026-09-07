@@ -34,7 +34,7 @@ export function GacetaPopup({
   // En móvil la barra de acción vive abajo: el recorte se coloca encima para
   // no tapar los botones de avanzar.
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-32 z-[68] flex justify-center px-4 xl:bottom-4">
+    <div className="pointer-events-none fixed inset-x-0 bottom-32 z-[54] flex justify-center px-4 xl:bottom-4">
       <article
         className="carpeta pointer-events-auto w-full max-w-md animate-aparecer px-5 py-4"
         role="status"

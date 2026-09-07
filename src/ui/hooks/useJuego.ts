@@ -12,10 +12,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   type ComandoJuego,
   type GameState,
+  type RegistroEvento,
   type ResumenAvance,
   type ResumenTurno,
   crearEstadoInicial,
   ejecutarComando,
+  eventosSinLeer,
 } from '../../engine';
 import { DURACION_TRANSICION_MS } from '../components/TransicionSemana';
 import { sonarSello } from '../audio/sello';
@@ -36,6 +38,8 @@ export interface Transicion {
   relojCongeladora: number | null;
   /** Presente solo si la corrida abarcó varias semanas. */
   avance: ResumenAvance | null;
+  /** Sucesos notables ocurridos durante la corrida. */
+  sucesos: RegistroEvento[];
 }
 
 function leerBandera(clave: string): boolean {
@@ -62,6 +66,10 @@ function cargarPartidaGuardada(): GameState | null {
     // Validación mínima: si el esquema cambió, se descarta y se empieza limpio.
     if (typeof guardado?.semanaActual !== 'number' || !guardado?.recursos) return null;
     if (typeof guardado.comisionDesbloqueada !== 'boolean') return null;
+    // Partidas anteriores al marcador de lectura: se dan por leidas.
+    if (typeof guardado.registroLeidoHasta !== 'number') {
+      guardado.registroLeidoHasta = guardado.registro?.length ?? 0;
+    }
     return guardado;
   } catch {
     return null;
@@ -126,6 +134,7 @@ export function useJuego() {
             ? (resultado.estado.comisionActiva?.relojCongeladoraSemanas ?? null)
             : null,
           avance: resultado.estado.ultimoAvance,
+          sucesos: eventosSinLeer(resultado.estado),
         });
         setTimeout(() => setBloqueado(false), DURACION_TRANSICION_MS);
       }

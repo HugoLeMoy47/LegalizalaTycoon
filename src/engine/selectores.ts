@@ -6,11 +6,19 @@
  * cosmeticos (colores de barra, textos de estado, estimaciones distorsionadas).
  */
 
-import { SESGO_PESIMISTA_NIEBLA, UMBRAL_NIEBLA_MENTAL, VICTORIA } from './balance';
+import {
+  COSTO_APOYO_POR_HORA_CABILDEO,
+  FACTOR_DRENAJE_APOYO_POR_PRESION,
+  SESGO_PESIMISTA_NIEBLA,
+  UMBRAL_NIEBLA_MENTAL,
+  VICTORIA,
+} from './balance';
 import { ETIQUETAS_DISTORSION, PENSAMIENTOS_INTRUSIVOS } from './data/narrativa';
 import { VERBOS, aliadosActivos, presupuestoHorasLider } from './estado';
 import { contarVotos } from './legislativo';
-import type { GameState, MiembroColectivo, VerboAccion } from './types';
+import { horasPorVerbo } from './acciones';
+import type { GameState, MiembroColectivo, RegistroEvento, TipoEvento, VerboAccion } from './types';
+import { redondear } from './utilidades';
 
 export type NivelRecurso = 'CRITICO' | 'BAJO' | 'MEDIO' | 'ALTO';
 
@@ -132,6 +140,68 @@ export function checklistVictoria(estado: GameState) {
       cumplido: Boolean(estado.banderas.senadoAprobado),
     },
   ];
+}
+
+// ---------------------------------------------------------------------------
+// Novedades de la bitácora (v2.1)
+// ---------------------------------------------------------------------------
+
+/**
+ * Entradas que merecen que el jugador se entere. La Gaceta es color narrativo
+ * y las de Sistema son avisos de trámite: ninguna reclama atención.
+ */
+const TIPOS_NOTABLES: TipoEvento[] = ['CRISIS', 'ADVERTENCIA', 'DECISION', 'LOGRO', 'DESENLACE'];
+
+export function esEventoNotable(entrada: RegistroEvento): boolean {
+  return TIPOS_NOTABLES.includes(entrada.tipo);
+}
+
+/**
+ * Lo que pasó desde la última vez que el jugador miró la bitácora.
+ *
+ * Con el avance de varias semanas es fácil que ocurran cosas sin que nadie las
+ * note; esto alimenta el contador de la pestaña y el resumen de la transición.
+ */
+export function eventosSinLeer(estado: GameState): RegistroEvento[] {
+  return estado.registro.slice(estado.registroLeidoHasta ?? 0).filter(esEventoNotable);
+}
+
+// ---------------------------------------------------------------------------
+// Costo político del cabildeo (v2.1)
+// ---------------------------------------------------------------------------
+
+export interface CostoPolitico {
+  /** Apoyo Social que se pierde por hora dedicada a cabildear. */
+  porHoraDeCabildeo: number;
+  /** Apoyo que se pierde esta semana por las horas ya asignadas. */
+  porHorasAsignadas: number;
+  /** Apoyo que drena por semana la presión política acumulada. */
+  porPresionSostenida: number;
+  /** Suma semanal, para mostrar de un vistazo. */
+  totalSemanal: number;
+  /** El drenaje por presión solo aplica con expediente en comisiones. */
+  activo: boolean;
+}
+
+/**
+ * Cabildear cuesta dos veces: las horas queman capital social mientras
+ * negocias, y sostener presión alta lo sigue quemando aunque no hagas nada
+ * (GDD pilar 2). El jugador no veía la segunda mitad.
+ */
+export function costoPolitico(estado: GameState): CostoPolitico {
+  const horas = horasPorVerbo(estado, 'CABILDEAR');
+  const porHorasAsignadas = redondear(horas * COSTO_APOYO_POR_HORA_CABILDEO);
+  const porPresionSostenida = estado.comisionDesbloqueada
+    ? redondear(estado.recursos.presionPolitica * FACTOR_DRENAJE_APOYO_POR_PRESION)
+    : 0;
+
+  return {
+    porHoraDeCabildeo: COSTO_APOYO_POR_HORA_CABILDEO,
+    porHorasAsignadas,
+    porPresionSostenida,
+    totalSemanal: redondear(porHorasAsignadas + porPresionSostenida),
+    activo: estado.comisionDesbloqueada,
+  };
 }
 
 // ---------------------------------------------------------------------------

@@ -284,6 +284,12 @@ export interface GameState {
   sellos: SelloExpediente[];
   /** Bitacora estructurada; `historialEventos` es su espejo plano normativo. */
   registro: RegistroEvento[];
+  /**
+   * Cuantas entradas de la bitacora ya vio el jugador. Todo lo que venga
+   * despues se marca como novedad: con el avance de varias semanas es facil
+   * que ocurran cosas sin que nadie se entere.
+   */
+  registroLeidoHasta: number;
   /** Modal de decision bloqueante pendiente de resolucion. */
   decisionPendiente: Decision | null;
   /** Anuncio de hito de desbloqueo pendiente de acuse (no bloquea el turno). */
@@ -320,6 +326,7 @@ export type ComandoJuego =
   | { tipo: 'CERRAR_HITO' }
   | { tipo: 'CERRAR_GACETA' }
   | { tipo: 'COMPLETAR_ONBOARDING' }
+  | { tipo: 'MARCAR_BITACORA_LEIDA' }
   | { tipo: 'AVANZAR_SEMANA' }
   | { tipo: 'AVANZAR_HASTA_EVENTO'; maximoSemanas?: number };
 

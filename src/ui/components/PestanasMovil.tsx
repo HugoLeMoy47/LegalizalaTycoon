@@ -30,6 +30,8 @@ interface Props {
   onCambiar: (pestana: PestanaMovil) => void;
   /** Pestañas con acción pendiente esta semana; se marcan con un punto. */
   conPendiente?: PestanaMovil[];
+  /** Novedades sin leer por pestaña; se pintan como contador. */
+  novedades?: Partial<Record<PestanaMovil, number>>;
   /**
    * Pestañas cuyo contenido aún no se desbloquea. **Siguen siendo navegables**:
    * el panel de adentro explica el candado y en qué semana se abre. Impedir la
@@ -43,6 +45,7 @@ export function PestanasMovil({
   onCambiar,
   conPendiente = [],
   bloqueadas = [],
+  novedades = {},
 }: Props) {
   return (
     <nav
@@ -68,11 +71,21 @@ export function PestanasMovil({
               ) : (
                 <Icono className="h-4 w-4" aria-hidden />
               )}
-              {conPendiente.includes(id) && !esActiva && (
+              {(novedades[id] ?? 0) > 0 && !esActiva ? (
                 <span
-                  className="absolute -right-1 -top-0.5 h-1.5 w-1.5 rounded-full bg-olivo-400"
-                  aria-label="Tiene acciones pendientes"
-                />
+                  className="absolute -right-2.5 -top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-olivo-500 px-1 font-tactica text-[9px] font-semibold text-papel-100"
+                  aria-label={`${novedades[id]} novedades sin leer`}
+                >
+                  {novedades[id]}
+                </span>
+              ) : (
+                conPendiente.includes(id) &&
+                !esActiva && (
+                  <span
+                    className="absolute -right-1 -top-0.5 h-1.5 w-1.5 rounded-full bg-olivo-400"
+                    aria-label="Tiene acciones pendientes"
+                  />
+                )
               )}
             </span>
             {/* La etiqueta siempre visible: un icono solo no le dice nada a

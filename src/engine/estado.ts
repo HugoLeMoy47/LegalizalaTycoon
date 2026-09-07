@@ -65,6 +65,7 @@ export function crearEstadoInicial(opciones: OpcionesPartida = {}): GameState {
     rutaLegislativa: rutaLegislativaInicial(),
     sellos: [],
     registro: [],
+    registroLeidoHasta: 0,
     decisionPendiente: null,
     hitoPendiente: null,
     gacetaPendiente: null,
