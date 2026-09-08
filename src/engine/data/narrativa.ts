@@ -185,6 +185,14 @@ export const GLOSARIO: Record<string, string> = {
     'Calidad jurídica de tu articulado. Si no alcanza el mínimo de la comisión, te devuelven el dictamen aunque tengas los votos.',
   FIRMAS:
     'El Art. 71 frac. IV exige respaldo ciudadano verificable antes de que una iniciativa pueda presentarse formalmente.',
+  PARLAMENTO_ABIERTO:
+    'Foro de consulta pública que la comisión debe celebrar antes de mandar el dictamen al Pleno. Aquí no se votan artículos: se agotan sesiones. Si nadie llega, el foro no cuenta y el reloj sigue corriendo.',
+  COMISION_PRESUPUESTO:
+    'Opinión de Hacienda sobre cuánto cuesta aplicar la ley. Solo se exige si la ley trae presupuesto asignado: quitárselo te ahorra el trámite completo, y ese es exactamente el chantaje.',
+  ORDEN_DEL_DIA:
+    'Lista de asuntos que la Mesa Directiva sube a tribuna en cada sesión. Tener el dictamen aprobado no es tener la votación: el punto se cae de la sesión más veces de las que se agenda.',
+  RECESO:
+    'Periodo en el que las cámaras no sesionan. Ningún plazo de dictaminación corre, así que es el único tramo de la partida en el que el tiempo no juega en tu contra.',
 };
 
 // ---------------------------------------------------------------------------

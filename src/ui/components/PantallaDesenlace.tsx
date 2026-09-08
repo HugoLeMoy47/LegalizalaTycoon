@@ -87,7 +87,7 @@ function DiarioOficial({ estado }: { estado: GameState }) {
 }
 
 const ACTAS: Record<
-  Exclude<EstadoJuego, 'VICTORIA_DOF' | 'JUGANDO' | 'DESCANSO_FORZADO_SEM_48'>,
+  Exclude<EstadoJuego, 'VICTORIA_DOF' | 'JUGANDO' | 'DESCANSO_FORZADO_SEM_48' | 'PROLOGO_NIVEL_0'>,
   { titulo: string; cuerpo: string; leccion: string }
 > = {
   DERROTA_CONGELADORA: {

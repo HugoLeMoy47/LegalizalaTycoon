@@ -210,6 +210,81 @@ chasquido de ruido filtrado — para no añadir un archivo de audio al bundle.
 
 ---
 
+## 4.4 Nivel 0, embudo estirado y recesos (v2.2)
+
+### El Nivel 0 como sub-estado, no como modal
+
+`EstadoJuego` gana el valor `PROLOGO_NIVEL_0`. La partida arranca ahí y el reloj
+de las 100 semanas no corre hasta que el jugador activa el mandato. Vive dentro
+del `GameState` —y no en `localStorage`, como el prólogo de la v2.0— por tres
+razones: se guarda con la partida, se reproduce con la semilla y las pruebas
+pueden recorrerlo como cualquier otra secuencia de comandos.
+
+```
+crearEstadoInicial()                 → PROLOGO_NIVEL_0, nivel0.paso = 1
+RESPONDER_NIVEL_0 (opción cívica)    → aplica efectos, avanza el paso
+RESPONDER_NIVEL_0 (opción bloqueada) → registra el intento, NO avanza el paso
+… tras el paso 3                      → nivel0.paso = 'EPIFANIA'
+ACTIVAR_MANDATO                      → JUGANDO, semana 1, recursos fijados
+```
+
+La simulación headless y las pruebas del ciclo semanal no juegan el chat: usan
+`crearEstadoInicial({ saltarNivel0: true })`, que aplica exactamente las mismas
+bonificaciones. Una prueba exige que ambos caminos produzcan el mismo estado —
+la primera versión dejaba filtrar la Presión Política del chat y solo se detectó
+en navegador.
+
+### Tres clases de cuello de botella
+
+El campo `tipo` de `Comision` distingue lo que se vota de lo que se aguanta:
+
+| Tipo | Cómo se supera | Qué exige |
+| :--- | :--- | :--- |
+| `DICTAMINADORA` | juntando votos | `votosFavorRequeridos` + `solidezTecnicaRequerida` |
+| `PARLAMENTO_ABIERTO` | agotando sesiones | `apoyoSocialRequerido` sostenido |
+| `PRESUPUESTO` | agotando sesiones | `solidezTecnicaRequerida`; se omite si la ley fue mutilada |
+
+Las dos últimas no tienen legisladores. Su reloj de congeladora cubre las
+sesiones programadas más el margen reglamentario estándar: un foro no se congela
+por durar lo que dura, sino por no poder celebrarse.
+
+A eso se suma `semanasEnOrdenDelDia`, la espera del dictamen ya aprobado a que
+la Mesa Directiva lo suba a tribuna. No es una comisión y no vive en la cola:
+vive en el estado y se reinicia al cambiar de fase.
+
+### El receso decide cuándo abre la fase siguiente
+
+Antes, `evaluarTransicionDeFase` leía `faseDeSemana(semanaActual)` y punto: las
+fases cambiaban en las semanas 31 y 66 pasara lo que pasara. Ganar el cabildo en
+la semana 7 dejaba 23 semanas vacías.
+
+Ahora la fase siguiente abre en:
+
+```
+min( SEMANA_CALENDARIO_FASE[siguiente], recesoHasta )
+```
+
+donde `recesoHasta` se fija al ganar el Pleno de la instancia y vale
+`semanaActual + SEMANAS_RECESO_ENTRE_FASES + 1`. Quien cierra su embudo entra
+antes; quien no lo cierra espera al corte fijo de siempre y paga el malus por
+escalar sin antecedente. `faseDeSemana` sigue existiendo como el piso del
+calendario, y `verificarCalendarioDeFases` verifica ese contrato: las fases
+nunca retroceden y ninguna abre **después** de su corte.
+
+Durante el receso no hay comisión activa —el reloj no corre— y la Presión
+Política decae al ritmo base en lugar del agresivo de "sin agenda". El castigo
+fuerte se reserva para quien se queda sin expediente en periodo ordinario de
+sesiones, que es una situación distinta.
+
+### Telemetría sin romper la pureza
+
+`engine/telemetria.ts` solo acumula eventos dentro del `GameState`. No hace red,
+no toca `console` y no lee `Date.now()`: cualquiera de las tres cosas rompería
+el determinismo por semilla y la prueba de pureza. El `timestamp` sale en 0 y lo
+estampa el sumidero de `useJuego`, que drena la cola una sola vez por evento.
+
+---
+
 ## 5. Desviaciones documentadas respecto de la especificación
 
 | Punto | Especificación | Implementación | Razón |
@@ -221,8 +296,12 @@ chasquido de ruido filtrado — para no añadir un archivo de audio al bundle.
 | Derrota por mutilación total | El GDD §1 la lista como condición de derrota | Se resuelve como `VICTORIA_DOF` con `iniciativaMutilada = true` y epílogo distinto | El tipo `EstadoJuego` de la GUÍA no incluye ese estado. La lección pedagógica se entrega en la pantalla final: *"Ganaste la foto, no la reforma."* |
 | Fin de las 100 semanas sin promulgar | No tiene estado propio | `DERROTA_CONGELADORA` | Es lo que ocurre en la realidad: los asuntos no dictaminados se declaran precluidos. |
 | Fase municipal | La congeladora se activa en fase estatal (GDD §5) | El cabildo tiene reloj de **16 semanas**, que arranca en la semana 6 | Valor fijado por la guía v2.0 §5.B. "Baja burocracia" no significa tiempo infinito: el observador pasivo pierde en la semana 21. |
-| Firma de `avanzarSemana` | La guía v2.0 §6 la plantea como `avanzarSemana(estado): GameState` desde `src/core/simulation` | `avanzarSemana(estado): ResultadoComando` en `src/engine/motor.ts` | Todos los comandos comparten firma y devuelven `{estado, ok, mensaje}`. Cambiarla rompería la frontera única del motor y las 82 pruebas. La prueba de balance usa un helper que desenvuelve el resultado; las aserciones son las de la guía. |
+| Firma de `avanzarSemana` | La guía v2.0 §6 la plantea como `avanzarSemana(estado): GameState` desde `src/core/simulation` | `avanzarSemana(estado): ResultadoComando` en `src/engine/motor.ts` | Todos los comandos comparten firma y devuelven `{estado, ok, mensaje}`. Cambiarla rompería la frontera única del motor y las 111 pruebas. La prueba de balance usa un helper que desenvuelve el resultado; las aserciones son las de la guía. |
 | Costo de acciones tempranas | La guía v2.0 §5.B propone acciones de costo fijo (20 hrs ⇒ +10% Apoyo) | Se conserva el modelo continuo con saturación (20 hrs ⇒ ≈ +5.9% con Apoyo en 30) | El modelo continuo es el que sostiene la matriz de arquetipos validada en la Entrada #011. Lo que sí se calibró al número exacto de la guía son las **firmas**, que son la meta real de la Etapa A. |
+| Presión Política del Nivel 0 | La guía v2.2 §2.A da `presionPolitica += 10` y `+= 25`; su §2.B fija el estado de entrada a la Semana 1 sin mencionar presión | La presión vuelve a su valor de arranque (5%) | La guía se contradice a sí misma. Llegar a la semana 1 con 35 puntos de presión reproduce el embotellamiento que la Bitácora #014 §3.C.1 identificó como causa de que el cabildo se resolviera en dos turnos, y contradice que cabildear no exista hasta la semana 6. |
+| Bonificación `contencionDeuda` de Gael | La guía v2.2 §3 se la asigna | **No implementada** | Depende de `deudaDeImplementacion`, sistema de la propuesta 3.B que la v2.2 no construye y que su propia §1 no enumera. Gael entra con lo que sí existe: 20 hrs/semana y ×1.25 en firmas. |
+| Comisión de Presupuesto federal | La Bitácora #014 §3.C.3 la pide en fases estatal **y** federal | Solo en municipal y estatal | La fase federal ya ocupa su calendario y es la única bicameral. Añadirle ocho semanas empujaba la promulgación más allá de la semana 100 (medido con `npm run sim`). |
+| Disparador del dilema de ley mutilada | La GUÍA 4.C lo ata al reloj de la congeladora ≤ 3 semanas | Ese disparador **más** la entrada a la Comisión de Presupuesto | Con el embudo estirado el reloj casi nunca baja de 3, y el dilema ético quedaba inalcanzable: los arquetipos *Estratega* y *Pragmático* colapsaban en el mismo desenlace. |
 | Nombre de la abogada | El GDD §10 dice **Sofía**; la Bitácora #012 dice **Mariana** | **Mariana Rendón** | La Entrada #012 es posterior y es la que rige el contenido de la v2.0. |
 
 ---
@@ -259,15 +338,17 @@ arquetipo cambia de desenlace, la lección pedagógica cambió con él.
 
 | Prueba de la GUÍA §6 | Archivo | Estado |
 | :--- | :--- | :--- |
-| 1 · Simulación headless de 100 semanas, cambios de fase en 31 y 66 | [`ciclo-semanal.test.ts`](../src/engine/__tests__/ciclo-semanal.test.ts) | ✅ 14 casos |
+| 1 · Simulación headless de 100 semanas y calendario de fases | [`ciclo-semanal.test.ts`](../src/engine/__tests__/ciclo-semanal.test.ts) | ✅ 14 casos |
 | 2 · Resiliencia en la Semana 48 (con colectivo vs. en solitario) | [`semana-48.test.ts`](../src/engine/__tests__/semana-48.test.ts) | ✅ 10 casos |
 | 3 · Tensión de horas extra y detonación de la niebla mental | [`horas-extra.test.ts`](../src/engine/__tests__/horas-extra.test.ts) | ✅ 10 casos |
 | 4 · Victoria / derrota y pantalla del DOF | [`desenlaces.test.ts`](../src/engine/__tests__/desenlaces.test.ts) | ✅ 9 casos |
 | — Disparadores por umbral y dilemas | [`disparadores.test.ts`](../src/engine/__tests__/disparadores.test.ts) | ✅ 16 casos |
 | — Pureza, inmutabilidad y determinismo | [`pureza.test.ts`](../src/engine/__tests__/pureza.test.ts) | ✅ 10 casos |
 | v2.0 · Progresión escalonada del early game | [`balance_early_game.test.ts`](../src/engine/__tests__/balance_early_game.test.ts) | ✅ 13 casos |
+| v2.2 · Nivel 0 y arco de Gael (guía §7.1 y §7.3) | [`nivel0.test.ts`](../src/engine/__tests__/nivel0.test.ts) | ✅ 13 casos |
+| v2.2 · Embudo estirado, recesos y semanas muertas (guía §7.2) | [`ritmo.test.ts`](../src/engine/__tests__/ritmo.test.ts) | ✅ 16 casos |
 
-**82 pruebas, sin navegador, ~8 segundos.**
+**111 pruebas, sin navegador, ~10 segundos.**
 
 ---
 
@@ -311,12 +392,12 @@ Bundle total: **~241 KB (74 KB gzip)**.
 
 Cosas que un equipo debería atender antes de considerar esto algo más que una POC:
 
-1. **Recesos largos entre fases.** Un jugador eficiente puede resolver la instancia
-   estatal en ~10 semanas y quedarse ~20 semanas sin comisión activa. Es fiel al
-   calendario legislativo real, pero como ritmo de juego es plano. La v2.0 resolvió
-   el arranque con el desbloqueo escalonado (§4.3); falta aplicar la misma idea a
-   los recesos estatal y federal: objetivos intermedios, litigio estratégico o
-   campañas de firmas por fase.
+1. ~~**Recesos largos entre fases.**~~ **Resuelto en la v2.2** (§4.4). El embudo
+   estirado y el receso fijo bajaron las semanas muertas de **54 a 13** por partida,
+   medido con `npm run sim:huecos` sobre seis semillas. Queda pendiente el sistema
+   de `deudaDeImplementacion` (propuesta 3.B de la Bitácora #014), que convertiría
+   el receso en algo que además se puede perder, y la ruta judicial (3.A), congelada
+   por decisión de la Entrada #015 para un modo avanzado.
 2. **Sin pruebas de componentes React.** El motor está cubierto al detalle; la UI se
    validó manualmente en navegador. Faltaría Testing Library para los flujos de modal
    y vista dual.

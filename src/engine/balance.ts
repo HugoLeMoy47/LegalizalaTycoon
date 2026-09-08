@@ -44,6 +44,54 @@ export const FIRMAS_POR_HORA_MOVILIZACION = 9;
 /** Reloj de la congeladora del Cabildo, activado en la semana 6. */
 export const RELOJ_CONGELADORA_MUNICIPAL = 16;
 
+// --- Ventanas de remediacion (GUIA v2.2 seccion 4) -------------------------
+
+/**
+ * Receso parlamentario entre fases: 5 semanas, dentro de la ventana de 4 a 6
+ * que fija la guia.
+ *
+ * El siguiente periodo de sesiones abre en `min(corte del calendario,
+ * fin del embudo + receso)`. Antes la fase cambiaba solo por calendario, asi
+ * que ganar el cabildo en la semana 7 dejaba 23 semanas vacias: el 55% de
+ * semanas muertas que midio `sim:huecos` (Bitacora #014).
+ */
+export const SEMANAS_RECESO_ENTRE_FASES = 6;
+
+/**
+ * Duracion de las etapas de tramite, por fase.
+ *
+ * El embudo real tiene mas cuellos de los que la POC modelaba: entre el
+ * dictamen y el Pleno hay un foro de consulta obligatorio, una opinion de
+ * Hacienda y una espera para que la Mesa Directiva enliste el asunto. Las tres
+ * consumen calendario con el reloj de la congeladora corriendo, que es
+ * exactamente lo contrario de una semana muerta.
+ *
+ * Calibrado con `npm run sim:huecos` para que cada instancia ocupe su fase.
+ */
+export const SEMANAS_PARLAMENTO_ABIERTO: Record<FaseJuego, number> = {
+  MUNICIPAL: 5,
+  ESTATAL: 8,
+  FEDERAL: 0,
+};
+
+/** Sesiones que consume el dictamen de Hacienda cuando la ley trae presupuesto. */
+export const SEMANAS_COMISION_PRESUPUESTO: Record<FaseJuego, number> = {
+  MUNICIPAL: 5,
+  ESTATAL: 8,
+  FEDERAL: 0,
+};
+
+/**
+ * Semanas que la Mesa Directiva tarda en enlistar el dictamen en el orden del
+ * dia del Pleno. Tener el dictamen no es tener la votacion: hay que esperar
+ * turno, y el asunto se cae de la sesion mas veces de las que se agenda.
+ */
+export const SEMANAS_ORDEN_DEL_DIA: Record<FaseJuego, number> = {
+  MUNICIPAL: 5,
+  ESTATAL: 8,
+  FEDERAL: 4,
+};
+
 // --- Recursos iniciales ----------------------------------------------------
 
 export const RECURSOS_INICIALES = {
@@ -58,6 +106,29 @@ export const RECURSOS_INICIALES = {
 } as const;
 
 export const SOLIDEZ_TECNICA_INICIAL = 20;
+
+/**
+ * Recursos con los que arranca la Semana 1 quien resolvio el Nivel 0
+ * (GUIA v2.2 seccion 2.B, clausula de transicion).
+ *
+ * Son valores ABSOLUTOS, no la suma de los efectos que el chat va narrando.
+ * El chat mueve los tres recursos en vivo para que el jugador vea la relacion
+ * entre lo que decide y lo que cambia, pero al activar el mandato el estado se
+ * fija en estos numeros.
+ *
+ * En particular, la Presion Politica vuelve a su valor de arranque: los +10 y
+ * +25 del guion se quedan en la narrativa. Llegar a la semana 1 con presion
+ * acumulada contradice el desbloqueo escalonado de la v2.0 —cabildear no
+ * existe hasta la semana 6— y dejaria al jugador volteando el cabildo entero
+ * en un turno (Bitacora #014 seccion 3.C.1). La red vecinal te ensena a
+ * escalar una queja; no te deja agenda en el Congreso.
+ */
+export const RECURSOS_TRAS_NIVEL_0 = {
+  apoyoSocial: 35,
+  solidezTecnica: 15,
+  resistencia: 90,
+  presionPolitica: RECURSOS_INICIALES.presionPolitica,
+} as const;
 
 // --- Horas extra / autoexplotacion (GUIA 3.A.1, GDD 8) ---------------------
 

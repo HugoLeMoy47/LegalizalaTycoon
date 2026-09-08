@@ -52,7 +52,17 @@ import {
 } from './balance';
 import { MEDIOS_FICTICIOS, TITULARES_GACETA } from './data/narrativa';
 import { aplicarDescansoForzado, despacharEventos, dispararSemana48 } from './disparadores';
-import { VERBOS, esSemanaDeDescanso, lider, marcarNodo, presupuestoHorasLider, sellar } from './estado';
+import {
+  VERBOS,
+  enReceso,
+  esSemanaDeDescanso,
+  lider,
+  marcarNodo,
+  presupuestoHorasLider,
+  sellar,
+} from './estado';
+import { activarMandato, responderNivel0 } from './nivel0';
+import { emitir } from './telemetria';
 import {
   avanzarRelojCongeladora,
   evaluarDesenlace,
@@ -132,7 +142,11 @@ function procesarSemana(estado: GameState): void {
   }
 
   // --- Paso 3.1: la presion politica es perecedera ------------------------
-  const sinAgenda = estado.comisionActiva === null;
+  // v2.2: durante el receso parlamentario la caida es la base, no la de
+  // "sin agenda". No es que te hayan olvidado: es que el Congreso cerro
+  // (GUIA v2.2 seccion 4.3). El castigo fuerte se reserva para quien se
+  // queda sin expediente en periodo ordinario de sesiones.
+  const sinAgenda = estado.comisionActiva === null && !enReceso(estado);
   const perdidaPresion = sinAgenda
     ? Math.max(
         PISO_DECAIMIENTO_SIN_AGENDA,
@@ -183,6 +197,13 @@ function procesarSemana(estado: GameState): void {
   evaluarTransicionDeFase(estado);
   gestionarDescansoForzado(estado);
   evaluarDesenlace(estado);
+
+  if (estado.estadoJuego !== 'JUGANDO' && estado.estadoJuego !== 'DESCANSO_FORZADO_SEM_48') {
+    emitir(estado, 'FIN_PARTIDA', {
+      desenlace: estado.estadoJuego,
+      mutilada: estado.iniciativaMutilada,
+    });
+  }
 
   // --- Cierre de turno -----------------------------------------------------
   estado.ultimoTurno = {
@@ -335,6 +356,8 @@ function aplicarDesbloqueosEscalonados(estado: GameState): void {
       ],
     };
 
+    emitir(estado, 'INICIATIVA_PRESENTADA_SEM_6', { firmas: estado.firmasRecolectadas });
+
     registrar(
       estado,
       'SISTEMA',
@@ -349,7 +372,11 @@ function gestionarDescansoForzado(estado: GameState): void {
   if (estado.estadoJuego !== 'JUGANDO' && estado.estadoJuego !== 'DESCANSO_FORZADO_SEM_48') return;
 
   if (estado.semanaActual === SEMANA_DISPARADOR_BURNOUT && !estado.banderas.semana48) {
-    dispararSemana48(estado);
+    const reporte = dispararSemana48(estado);
+    emitir(estado, 'CRISIS_BURNOUT_SEM_48', {
+      aliadosActivos: reporte.aliadosActivos,
+      colectivoSostuvo: reporte.colectivoSostuvo,
+    });
     return;
   }
 
@@ -381,6 +408,13 @@ export function avanzarSemana(estadoOriginal: GameState): ResultadoComando {
       estado: estadoOriginal,
       ok: false,
       mensaje: 'Hay un dilema sobre la mesa. Resuélvelo antes de avanzar la semana.',
+    };
+  }
+  if (estadoOriginal.estadoJuego === 'PROLOGO_NIVEL_0') {
+    return {
+      estado: estadoOriginal,
+      ok: false,
+      mensaje: 'El reloj de las 100 semanas todavía no arranca: primero hay que sacar a Gael.',
     };
   }
   if (
@@ -540,6 +574,10 @@ export function ejecutarComando(
     case 'MARCAR_BITACORA_LEIDA':
       estado.registroLeidoHasta = estado.registro.length;
       return { estado, ok: true };
+    case 'RESPONDER_NIVEL_0':
+      return responderNivel0(estado, comando.opcionId);
+    case 'ACTIVAR_MANDATO':
+      return activarMandato(estado);
     default:
       return { estado: estadoOriginal, ok: false, mensaje: 'Comando desconocido.' };
   }

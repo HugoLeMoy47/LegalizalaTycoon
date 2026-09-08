@@ -65,6 +65,7 @@ function asignarAliados(estado: GameState): ComandoJuego[] {
     ABOGADA: 'INVESTIGAR',
     VOCERO: 'CABILDEAR',
     ENLACE_BASE: 'MOVILIZAR',
+    ACTIVISTA_TERRITORIAL: 'MOVILIZAR',
   };
   return estado.colectivo
     .filter((m) => m.rol !== 'LIDER' && m.activo)

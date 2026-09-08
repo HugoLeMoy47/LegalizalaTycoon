@@ -109,39 +109,89 @@ export function dispararRupturaInterna(estado: GameState): void {
 // C) Oferta de Ley Mutilada (GUIA 4.C)
 // ---------------------------------------------------------------------------
 
+/**
+ * ¿Hay motivo para que las bancadas pongan el trato sobre la mesa?
+ *
+ * Dos caminos, los dos autenticos:
+ *
+ * 1. El reloj de una comision dictaminadora esta por vencer y te venden el
+ *    dictamen a cambio de dientes (GUIA 4.C, el caso original).
+ * 2. El expediente entra a la Comision de Presupuesto. Ahi el chantaje es mas
+ *    limpio: sin presupuesto asignado, Hacienda no tiene que dictaminar nada y
+ *    te ahorras la comision entera. Es el incentivo perverso que la v2.2
+ *    construyo a proposito (Bitacora #014, riesgo 4).
+ *
+ * Sin el segundo camino el dilema etico se volvia inalcanzable con el embudo
+ * estirado: el reloj ya casi nunca baja de tres semanas.
+ */
+function hayOfertaSobreLaMesa(estado: GameState): boolean {
+  const comision = estado.comisionActiva;
+  if (!comision) return false;
+  if (comision.tipo === 'DICTAMINADORA') {
+    return comision.relojCongeladoraSemanas <= UMBRAL_OFERTA_MUTILACION;
+  }
+  if (comision.tipo === 'PRESUPUESTO') {
+    return !estado.iniciativaMutilada && comision.semanasTramiteCumplidas >= 1;
+  }
+  return false;
+}
+
 export function dispararOfertaMutilacion(estado: GameState): void {
   const comision = estado.comisionActiva;
   if (!comision || comision.congelada) return;
+  // Un foro de consulta no negocia articulado: no tiene con qué.
+  if (comision.tipo === 'PARLAMENTO_ABIERTO') return;
   if (comision.dictamenAprobado) return;
-  if (comision.relojCongeladoraSemanas > UMBRAL_OFERTA_MUTILACION) return;
+  if (!hayOfertaSobreLaMesa(estado)) return;
   if (estado.banderas[`mutilacion-${comision.id}`]) return;
   if (estado.decisionPendiente) return;
   estado.banderas[`mutilacion-${comision.id}`] = true;
 
+  const porPresupuesto = comision.tipo === 'PRESUPUESTO';
+
+  const semanasQueAhorra = Math.max(
+    0,
+    comision.semanasTramite - comision.semanasTramiteCumplidas,
+  );
+
   const decision: Decision = {
     id: 'LEY_MUTILADA',
-    titulo: 'Oferta de las bancadas: dictamen a cambio de dientes',
-    texto:
-      '“Mira, así como está no pasa. Le quitamos el autocultivo y el presupuesto para salud pública, y te lo dictaminamos la próxima semana. Todos ganamos en la foto.” El coordinador sonríe y pide la cuenta.',
+    titulo: porPresupuesto
+      ? 'Hacienda ofrece un atajo: quítale el presupuesto'
+      : 'Oferta de las bancadas: dictamen a cambio de dientes',
+    texto: porPresupuesto
+      ? `“Con presupuesto asignado esto se va a Hacienda y ahí se queda ${semanasQueAhorra} semanas, mínimo. Bórrale la partida y el autocultivo: sin dinero que revisar, no hay nada que dictaminar y el expediente sigue derecho al Pleno. Tú decides si quieres la ley o quieres el trámite.”`
+      : '“Mira, así como está no pasa. Le quitamos el autocultivo y el presupuesto para salud pública, y te lo dictaminamos la próxima semana. Todos ganamos en la foto.” El coordinador sonríe y pide la cuenta.',
     opciones: [
       {
         id: 'ACEPTAR',
-        etiqueta: 'Aceptar el dictamen mutilado',
-        descripcion: 'La ley avanza esta semana, pero sin mecanismos de sanción ni presupuesto.',
-        consecuencias: [
-          'Dictamen aprobado de inmediato',
-          'Apoyo Social −35%',
-          'La iniciativa queda marcada como mutilada en el epílogo',
-        ],
+        etiqueta: porPresupuesto ? 'Renunciar al presupuesto y saltarse Hacienda' : 'Aceptar el dictamen mutilado',
+        descripcion: 'La ley avanza, pero sin mecanismos de sanción ni presupuesto.',
+        consecuencias: porPresupuesto
+          ? [
+              `Te saltas ${semanasQueAhorra} semanas de trámite en Hacienda`,
+              'Apoyo Social −35%',
+              'La iniciativa queda marcada como mutilada en el epílogo',
+            ]
+          : [
+              'Dictamen aprobado de inmediato',
+              'Apoyo Social −35%',
+              'La iniciativa queda marcada como mutilada en el epílogo',
+            ],
       },
       {
         id: 'RECHAZAR',
         etiqueta: 'Rechazar y sostener el texto íntegro',
         descripcion: 'Conservas la ley completa y el respeto de las bases. El reloj sigue corriendo.',
-        consecuencias: [
-          'Nada cambia esta semana',
-          `Quedan ${comision.relojCongeladoraSemanas} semanas antes de la congeladora`,
-        ],
+        consecuencias: porPresupuesto
+          ? [
+              `El expediente pasa ${semanasQueAhorra} semanas más en Hacienda`,
+              `Necesitas Solidez Técnica ≥ ${comision.solidezTecnicaRequerida}% para sostener el impacto presupuestario`,
+            ]
+          : [
+              'Nada cambia esta semana',
+              `Quedan ${comision.relojCongeladoraSemanas} semanas antes de la congeladora`,
+            ],
       },
     ],
   };
@@ -151,7 +201,9 @@ export function dispararOfertaMutilacion(estado: GameState): void {
     estado,
     'DECISION',
     'Te ofrecen un trato',
-    'Las bancadas ponen sobre la mesa un dictamen sin dientes. Tienes que decidir antes de avanzar la semana.',
+    porPresupuesto
+      ? 'Hacienda te ofrece ahorrarte el trámite a cambio del presupuesto de la ley. Tienes que decidir antes de avanzar la semana.'
+      : 'Las bancadas ponen sobre la mesa un dictamen sin dientes. Tienes que decidir antes de avanzar la semana.',
   );
 }
 
@@ -164,6 +216,7 @@ export const UMBRAL_RELOJ_CESION_AUTORIA = 6;
 export function dispararCesionAutoria(estado: GameState): void {
   const comision = estado.comisionActiva;
   if (!comision || comision.congelada || comision.dictamenAprobado) return;
+  if (comision.tipo !== 'DICTAMINADORA') return;
   if (comision.fase === 'MUNICIPAL') return;
   if (comision.relojCongeladoraSemanas > UMBRAL_RELOJ_CESION_AUTORIA) return;
   if (estado.banderas[`autoria-${comision.id}`]) return;

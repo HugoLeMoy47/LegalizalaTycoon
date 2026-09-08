@@ -10,6 +10,7 @@
 import {
   BLOQUE_HORAS_EXTRA,
   BONO_ESPECIALISTA,
+  META_FIRMAS,
   CASTIGO_FRICCION_APOYO,
   CASTIGO_MUTILACION_APOYO,
   CONVERSION_APOYO_PRESION,
@@ -21,6 +22,7 @@ import {
   RENDIMIENTO_POR_HORA,
 } from './balance';
 import { VERBOS, aliadosActivos, lider, marcarNodo, presupuestoHorasLider, sellar } from './estado';
+import { emitir } from './telemetria';
 import type {
   GameState,
   Legislador,
@@ -151,6 +153,22 @@ export function quitarHorasExtra(estado: GameState): ResultadoComando {
 // Reclutamiento
 // ---------------------------------------------------------------------------
 
+/**
+ * Perfiles con arco propio (Gael) no aparecen desde la semana 1: se suman
+ * cuando el movimiento ya existe (GUIA v2.2 seccion 3).
+ */
+export function miembroDisponible(estado: GameState, miembro: MiembroColectivo): boolean {
+  if (miembro.faseMinima === undefined && miembro.firmasMinimas === undefined) return true;
+  const porFase =
+    miembro.faseMinima !== undefined &&
+    ORDEN_FASES.indexOf(estado.faseActual) >= ORDEN_FASES.indexOf(miembro.faseMinima);
+  const porFirmas =
+    miembro.firmasMinimas !== undefined && estado.firmasRecolectadas >= miembro.firmasMinimas;
+  return porFase || porFirmas;
+}
+
+const ORDEN_FASES = ['MUNICIPAL', 'ESTATAL', 'FEDERAL'] as const;
+
 export function reclutar(estado: GameState, miembroId: string): ResultadoComando {
   if (!estado.colectivoDesbloqueado) {
     return rechazo(estado, 'Todavía no tienes base social que convenza a nadie de sumarse.');
@@ -158,6 +176,12 @@ export function reclutar(estado: GameState, miembroId: string): ResultadoComando
   const miembro = estado.colectivo.find((m) => m.id === miembroId);
   if (!miembro) return rechazo(estado, 'Ese perfil no existe.');
   if (miembro.activo) return rechazo(estado, `${miembro.nombre} ya forma parte del colectivo.`);
+  if (!miembroDisponible(estado, miembro)) {
+    return rechazo(
+      estado,
+      `${miembro.nombre} todavía no se acerca: hacen falta ${META_FIRMAS} firmas o llegar al Congreso del Estado.`,
+    );
+  }
   if (estado.recursos.apoyoSocial < miembro.apoyoSocialMinimo) {
     return rechazo(
       estado,
@@ -190,6 +214,8 @@ function etiquetaRol(miembro: MiembroColectivo): string {
       return 'vocería';
     case 'ENLACE_BASE':
       return 'enlace con las bases';
+    case 'ACTIVISTA_TERRITORIAL':
+      return 'activismo territorial';
     default:
       return 'coordinación';
   }
@@ -306,6 +332,17 @@ export function horasPorVerbo(estado: GameState, verbo: VerboAccion): number {
   return estado.asignaciones[verbo] + deAliados;
 }
 
+/**
+ * Multiplicador de firmas de los perfiles con bonificacion propia (Gael).
+ * Solo cuenta si el aliado tiene horas puestas en Movilizar: la bonificacion
+ * es por trabajo hecho, no por tenerlo en la lista.
+ */
+export function factorFirmas(estado: GameState): number {
+  return aliadosActivos(estado)
+    .filter((m) => m.verboAsignado === 'MOVILIZAR' && m.horasAsignadas > 0)
+    .reduce((factor, m) => factor * (m.firmasMultiplicador ?? 1), 1);
+}
+
 /** Factor de especialista aplicable a un verbo esta semana. */
 export function factorEspecialista(estado: GameState, verbo: VerboAccion): number {
   const especialista = aliadosActivos(estado).find((m) => {
@@ -362,7 +399,10 @@ export function calcularRendimiento(estado: GameState): RendimientoSemanal {
     // Las firmas no saturan: una firma es una firma, la junte quien la junte.
     // Sí escalan con el enlace de base, que es quien abre las asambleas.
     firmas: Math.round(
-      hMovilizar * FIRMAS_POR_HORA_MOVILIZACION * factorEspecialista(estado, 'MOVILIZAR'),
+      hMovilizar *
+        FIRMAS_POR_HORA_MOVILIZACION *
+        factorEspecialista(estado, 'MOVILIZAR') *
+        factorFirmas(estado),
     ),
     horasTotales: hInvestigar + hMovilizar + hCabildear + hAutocuidado,
   };
@@ -417,6 +457,11 @@ export function resolverDecision(estado: GameState, opcionId: string): Resultado
 
 /** GUIA seccion 4.C — la oferta de concesion. */
 function resolverLeyMutilada(estado: GameState, opcionId: string): void {
+  emitir(estado, 'LEY_MUTILADA_DECISION', {
+    opcion: opcionId,
+    fase: estado.faseActual,
+  });
+
   if (opcionId !== 'ACEPTAR') {
     registrar(
       estado,
@@ -431,7 +476,7 @@ function resolverLeyMutilada(estado: GameState, opcionId: string): void {
   const comision = estado.comisionActiva;
   let alineados = 0;
 
-  if (comision) {
+  if (comision && comision.tipo === 'DICTAMINADORA') {
     // El trato incluye los votos: eso es lo que están vendiendo. Las bancadas
     // disciplinan a los suyos hasta reunir exactamente lo necesario.
     //

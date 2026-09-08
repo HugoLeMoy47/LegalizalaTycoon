@@ -323,3 +323,119 @@ Fiel al derecho mexicano y a la historia real de la causa: la Suprema Corte forz
 
 #### 5. Próximo Hito
 Implementación de la v2.1 en el orden C → B → D → A (de menor a mayor riesgo de balance), recalibración de las políticas de simulación y validación contra los dos criterios numéricos de la sección 4.
+
+### [2026-09-08] — Entrada #015: Consenso de Supervisión y Especificación v2.2 (Nivel 0 Gael, Remediación y Telemetría)
+* **Autor:** Supervisor de Game Design, Pedagogía y Líder de Proyecto.
+* **Contexto:** Evaluación de la retroalimentación de playtesting post-v2.0 y revisión crítica de la propuesta de ritmo v2.1.
+* **Decisiones de Diseño Aprobadas:**
+  1. **Nivel 0 Interactivo — "El Rescate de Gael" (Formato Chat de Red Vecinal / Signal):**
+     - Se sustituye el modal estático de texto denso por una interfaz de mensajería ciudadana contemporánea (estilo Signal/WhatsApp grupal).
+     - El jugador experimenta las mecánicas activistas a escala micro en 3 pasos: (1) Documentar abuso policial / IPH (Solidez Técnica), (2) Movilización vecinal y familiar ante el MP (Apoyo Social), y (3) Presión y alerta a Derechos Humanos (Presión Política).
+     - **Resolución Ética:** Se libera a Gael sin pagar un solo peso de mordida policial.
+     - **Epifanía y Transición Orgánica:** La conversación de cierre con Gael y su comunidad evidencia que la acción reactiva no frena el abuso estructural. Se activa el mandato del Art. 71 fr. IV y da inicio el reloj de las 100 semanas.
+  2. **Cierre de Arco de Personaje:**
+     - Gael se convierte formalmente en un aliado reclutable para el Cuartel del Colectivo en etapas posteriores bajo el rol de **Activista Territorial / Enlace Juvenil**, aportando bonificación en recolección de firmas y defensa comunitaria.
+  3. **Gestión de Tiempos Muertos como "Ventanas de Remediación":**
+     - Se descarta que los recesos sean un vacío desértico. Combinado con el estiramiento del embudo legislativo (Comisión de Presupuesto y Parlamento Abierto), los recesos parlamentarios se calibran en **ventanas fijas de 4 a 6 semanas**.
+     - Durante el receso, el reloj de la congeladora no corre: el jugador puede descansar estratégicamente (recuperar Resistencia), juntar firmas y fondos, o amortiguar la deuda de implementación. Funciona como una red de seguridad pedagógica para jugadores en desventaja.
+  4. **Postergación de la Ruta Judicial (Amparos SCJN) a "Modo Realista / Hard Mode":**
+     - Para evitar sobrecarga cognitiva en la POC y no dispersar el núcleo de gestión parlamentaria, el carril judicial paralelo se reserva para un modo de dificultad avanzada desbloqueable tras completar la primera partida.
+  5. **Telemetría y Analíticos de Aprendizaje (Learning Analytics):**
+     - Se define el esquema de eventos anónimos de telemetría cívica para medir el embudo educativo (tasa de éxito en Nivel 0, colapsos en Sem 48, dilemas de ley mutilada y desenlace final).
+* **Entregable Compilado:** [`docs/GUIA_NIVEL0_NARRATIVA_Y_REMEDIACION_v2.2.md`](GUIA_NIVEL0_NARRATIVA_Y_REMEDIACION_v2.2.md).
+
+
+### [2026-09-08] — Entrada #016: Implementación de la v2.2 (Nivel 0 Interactivo, Remediación y Telemetría)
+* **Estado:** **Implementada y validada.** Cierre del *Próximo Hito* declarado en la Entrada #015.
+* **Autor:** Agente Desarrollador.
+* **Alcance:** las cinco tareas de la [`GUIA_NIVEL0_NARRATIVA_Y_REMEDIACION_v2.2.md`](GUIA_NIVEL0_NARRATIVA_Y_REMEDIACION_v2.2.md). La propuesta 3.A (ruta judicial / amparos SCJN) queda formalmente congelada, conforme a la sección 5 de la guía.
+
+#### 1. Nivel 0 Interactivo — "El Rescate de Gael"
+
+El modal estático del prólogo se sustituye por un chat de red vecinal jugable (`ui/components/ChatNivel0.tsx`), gobernado por el sub-estado `PROLOGO_NIVEL_0` y por dos módulos puros nuevos: `engine/nivel0.ts` (lógica) y `engine/data/nivel0.ts` (guion).
+
+Tres micro-pasos, cada uno con una salida cívica y una bloqueada:
+
+| Paso | Enseña | Opción cívica | Opción bloqueada |
+| :--- | :--- | :--- | :--- |
+| 1 | Solidez Técnica | Exigir IPH y número de patrulla | Juntar la mordida |
+| 2 | Apoyo Social | Alerta comunitaria y presencia física en el MP | Esperar a la mañana siguiente |
+| 3 | Presión Política | Activar la Visitaduría de DDHH con folio de queja | Retirarse para no arriesgar a Doña Elena |
+
+Las opciones no cívicas **no consumen el paso**: registran el intento en `nivel0.intentosDeMordida`, devuelven la explicación pedagógica y dejan al jugador donde estaba. Es la única decisión del juego que no se puede tomar, y es deliberado: pagar la mordida no es una estrategia alternativa, es el problema que la partida entera intenta desmontar.
+
+#### 2. Desviación documentada: la Presión Política del prólogo no se transfiere
+
+La guía es internamente inconsistente en este punto. La sección 2.A asigna efectos por paso (`presionPolitica += 10` y `+= 25`), mientras que la cláusula de transición de la sección 2.B fija el estado de entrada a la Semana 1 en `apoyoSocial: 35%, solidezTecnica: 15%, resistencia: 90%`, sin mencionar presión.
+
+**Rige la cláusula de transición, y la presión vuelve a su valor de arranque (5%).** Razón: llegar a la Semana 1 con 35 puntos de Presión Política contradice frontalmente el desbloqueo escalonado de la v2.0 —cabildear no existe hasta la semana 6— y reproduce exactamente el embotellamiento que la Entrada #014 §3.C.1 identificó como causa raíz de que el cabildo se resolviera en dos turnos. La red vecinal te enseña a escalar una queja; no te deja agenda en el Congreso.
+
+El chat sí mueve los tres recursos en vivo, para que el jugador vea la relación entre lo que decide y lo que cambia. Al activar el mandato, el estado se fija en los valores absolutos de `RECURSOS_TRAS_NIVEL_0`.
+
+**Detectado en navegador, no en pruebas:** la primera implementación dejaba filtrar la presión y el jugador entraba a la Semana 1 con 40%. El atajo `saltarNivel0` que usan la simulación y las pruebas no ejecuta los pasos, así que la suite no lo veía. Hay ahora una prueba que exige que ambos caminos produzcan el mismo estado.
+
+#### 3. Gael como aliado reclutable
+
+Se suma al catálogo con el rol `ACTIVISTA_TERRITORIAL`, costo de $2,500, `firmasMultiplicador: 1.25` y desbloqueo por fase estatal **o** 500 firmas.
+
+**Alcance no implementado, declarado:** la guía le asigna también `contencionDeuda: 0.35`, una bonificación sobre la `deudaDeImplementacion` de la propuesta 3.B de la Entrada #014. Ese sistema **no existe** y no está en el alcance de la v2.2 (la sección 1 de la guía no lo enumera). El campo no se inventó: Gael entra con lo que la v2.2 sí construye —veinte horas semanales que no salen de la Resistencia del líder y un multiplicador real de firmas—. La contención de deuda queda pendiente para cuando se implemente 3.B.
+
+#### 4. El embudo se estira y los recesos se fijan
+
+Dos clases de etapa nuevas, ambas con campo `tipo` en `Comision`:
+
+* **`PARLAMENTO_ABIERTO`** — foro de consulta obligatorio entre el dictamen y el Pleno. No tiene legisladores: consume sesiones de calendario y exige sostener un mínimo de Apoyo Social. Si el respaldo cae, el foro se detiene y el reloj sigue corriendo.
+* **`PRESUPUESTO`** — opinión de Hacienda, con `seOmiteSiMutilada: true`. Exige Solidez Técnica y consume sesiones.
+
+Más una tercera espera que no es una comisión: **el orden del día del Pleno**. Tener el dictamen no es tener la votación; la Mesa Directiva enlista el asunto y el punto se cae de la sesión varias veces antes de subir a tribuna.
+
+**El receso deja de ser un hueco y pasa a ser una ventana.** La fase siguiente abre en `min(corte del calendario, fin del embudo + 6 semanas)`. Quien cierra su instancia entra antes al siguiente orden de gobierno; quien no la cierra espera al corte fijo de siempre y paga el malus por escalar sin antecedente. Durante el receso no hay comisión activa —el reloj no corre— y la Presión Política decae al ritmo base y no al agresivo de "sin agenda", conforme a la sección 4.3 de la guía.
+
+#### 5. Corrección de diseño: el dilema ético se había vuelto inalcanzable
+
+Con el embudo estirado, el reloj de la congeladora casi nunca baja de las tres semanas que exigía `UMBRAL_OFERTA_MUTILACION`. Medido: el arquetipo *Pragmático* dejó de recibir la oferta y colapsó sobre el *Estratega colectivo*, con desenlace idéntico. Se rompía el criterio de balanceo de la Entrada #011.
+
+La solución no fue bajar el umbral sino **darle al dilema el disparador que la propia v2.2 construyó**: entrar a la Comisión de Presupuesto. Ahí el chantaje es más limpio y más fiel al chantaje presupuestal real —*"bórrale la partida y no hay nada que dictaminar"*—, y hace visible el incentivo perverso que la Entrada #014 §3.C.3 diseñó a propósito.
+
+**Efecto en la matriz:** el *Pragmático* gana **nueve semanas antes** que el *Estratega*, con la ley mutilada. Es la lectura más legible que ha tenido esa lección: mutilar la ley es mecánicamente más rápido, y ahora se puede medir cuánto.
+
+#### 6. Telemetría y learning analytics
+
+`engine/telemetria.ts` acumula los siete eventos del embudo cívico dentro del `GameState`. El motor **no** hace red, no toca `console` y no lee el reloj: eso rompería la pureza y el determinismo por semilla. El sumidero vive en `useJuego`, que drena la cola, estampa el `timestamp` y hoy los imprime en consola. Sin cookies, sin identificadores y sin texto libre del jugador. Cambiar de destino es cambiar ese efecto y nada más.
+
+#### 7. Resultados contra los criterios de aceptación
+
+| Criterio (guía §7 y Entrada #014 §4) | Meta | Resultado |
+| :--- | :--- | :--- |
+| Semanas desérticas (`sim:huecos`) | < 15 | **13** — idéntico en las seis semillas |
+| Cuatro arquetipos, cuatro desenlaces | distintos y coherentes | **cumplido** |
+| Transferencia del Nivel 0 a la Semana 1 | probada | **cumplido** (`nivel0.test.ts`) |
+| Suite completa en verde | 82 → | **111 pruebas** |
+
+Matriz de arquetipos (semilla 20260906):
+
+| Arquetipo | Desenlace | Semana | Mutilada |
+| :--- | :--- | ---: | :--- |
+| Estratega colectivo | `VICTORIA_DOF` | 85 | no |
+| Pragmático | `VICTORIA_DOF` | 76 | **sí** |
+| Líder mártir | `DERROTA_BURNOUT` | 4 | no |
+| Observador pasivo | `DERROTA_CONGELADORA` | 21 | no |
+
+Ritmo del embudo medido con la herramienta nueva `npm run sim:ritmo`:
+
+| Fase | Tramitación | Receso | Guía §4.1 |
+| :--- | :--- | :--- | :--- |
+| Municipal | 6-23 | 24-29 | 6-24 / 25-30 |
+| Estatal | 30-56 | 57-62 | 31-58 / 59-65 |
+| Federal | 63-87 | — | 66-100 |
+
+Baseline de la v2.1: **54 semanas muertas**, victoria en la semana 89.
+
+#### 8. Deuda técnica actualizada
+
+1. La `deudaDeImplementacion` (propuesta 3.B) y la renovación de legislatura (3.D) siguen sin implementarse; la bonificación `contencionDeuda` de Gael queda declarada pero inerte.
+2. La ruta judicial (3.A) queda congelada por decisión de la Entrada #015, reservada al *Hard Mode*.
+3. Persiste la ausencia de pruebas de componentes React; la v2.2 se validó en navegador midiendo el DOM además de las capturas.
+4. Los dos modos de juego (Iniciación de 50 semanas / Realista) siguen pendientes. El calendario recalibrado de la v2.2 cambia sus supuestos: los números propuestos antes (fases en 16 y 33, burnout en 24) habrá que rehacerlos sobre el embudo nuevo.
+
+* **Próximo Hito:** re-despliegue en Cloudflare y sesión de playtesting sobre el ritmo nuevo, midiendo en particular si las etapas de trámite se leen como proceso o como espera.

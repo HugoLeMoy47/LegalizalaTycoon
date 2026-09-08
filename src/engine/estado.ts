@@ -10,6 +10,7 @@ import {
   SOLIDEZ_TECNICA_INICIAL,
 } from './balance';
 import { plantillaColectivo } from './data/colectivo';
+import { aplicarBonificacionesNivel0, nivel0Inicial } from './nivel0';
 import { comisionesDeFase } from './data/comisiones';
 import { rutaLegislativaInicial } from './data/ruta';
 import type { FaseJuego, GameState, VerboAccion } from './types';
@@ -32,6 +33,16 @@ export function esSemanaDeDescanso(semana: number): boolean {
 export interface OpcionesPartida {
   /** Semilla del PRNG. Fijarla hace la partida reproducible. */
   semilla?: number;
+  /**
+   * Salta el Nivel 0 interactivo y arranca en la Semana 1 con las
+   * bonificaciones ya transferidas, como si el jugador lo hubiera resuelto
+   * por la vía cívica.
+   *
+   * Lo usan la simulación headless y las pruebas del ciclo semanal, que miden
+   * el régimen de las 100 semanas y no el prólogo. La partida real siempre
+   * pasa por el chat.
+   */
+  saltarNivel0?: boolean;
 }
 
 export function crearEstadoInicial(opciones: OpcionesPartida = {}): GameState {
@@ -47,7 +58,7 @@ export function crearEstadoInicial(opciones: OpcionesPartida = {}): GameState {
     comisionActiva: primera ?? null,
     historialEventos: [],
     iniciativaMutilada: false,
-    estadoJuego: 'JUGANDO',
+    estadoJuego: 'PROLOGO_NIVEL_0',
     nieblaMentalActiva: false,
 
     // --- v2.0: la partida arranca en la Etapa A (activista solitario) ---
@@ -75,19 +86,46 @@ export function crearEstadoInicial(opciones: OpcionesPartida = {}): GameState {
     semanaUltimaCarta: -99,
     ultimoTurno: null,
     ultimoAvance: null,
+
+    // --- v2.2 ---
+    nivel0: nivel0Inicial(),
+    recesoHasta: null,
+    telemetria: [],
+    semanasEnOrdenDelDia: 0,
   };
 
-  // La iniciativa aún no está turnada: eso ocurre en la semana 6, cuando
-  // Oficialía de Partes la valida (GUIA v2.0, Etapa C).
-
-  registrar(
-    estado,
-    'SISTEMA',
-    'Asumes el mandato',
-    'Arranca la Etapa A: eres una sola persona con 40 horas a la semana. Antes de pisar el Cabildo necesitas juntar 500 firmas ciudadanas y un articulado que aguante revisión jurídica.',
-  );
+  if (opciones.saltarNivel0) {
+    aplicarBonificacionesNivel0(estado);
+    estado.nivel0.paso = 'COMPLETADO';
+    estado.estadoJuego = 'JUGANDO';
+    registrar(
+      estado,
+      'SISTEMA',
+      'Asumes el mandato',
+      'Arranca la Etapa A: eres una sola persona con 40 horas a la semana. Antes de pisar el Cabildo necesitas juntar 500 firmas ciudadanas y un articulado que aguante revisión jurídica.',
+    );
+  }
 
   return estado;
+}
+
+/** Semana calendario en la que abre cada periodo ordinario de sesiones. */
+export const SEMANA_CALENDARIO_FASE: Record<FaseJuego, number> = {
+  MUNICIPAL: 1,
+  ESTATAL: SEMANA_INICIO_ESTATAL,
+  FEDERAL: SEMANA_INICIO_FEDERAL,
+};
+
+/** Fase que sigue a la dada, o null si ya es la última. */
+export function faseSiguiente(fase: FaseJuego): FaseJuego | null {
+  if (fase === 'MUNICIPAL') return 'ESTATAL';
+  if (fase === 'ESTATAL') return 'FEDERAL';
+  return null;
+}
+
+/** El Congreso está en receso: no corre reloj y la presión decae al ritmo base. */
+export function enReceso(estado: GameState): boolean {
+  return estado.recesoHasta !== null && estado.semanaActual < estado.recesoHasta;
 }
 
 /** Cambia el estado de un nodo de la ruta legislativa. */

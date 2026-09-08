@@ -68,7 +68,10 @@ export function simularPartida(
 ): ResultadoSimulacion {
   const semilla = opciones.semilla ?? 20260906;
   const limite = opciones.semanaLimite ?? 100;
-  let estado = crearEstadoInicial({ semilla });
+  // La simulacion mide el regimen de las 100 semanas, no el prologo: arranca
+  // con las bonificaciones del Nivel 0 ya transferidas, como el jugador que
+  // lo resolvio por la via civica.
+  let estado = crearEstadoInicial({ semilla, saltarNivel0: true });
 
   const traza: FilaTraza[] = [capturarFila(estado)];
   const decisionesTomadas: ResultadoSimulacion['decisionesTomadas'] = [];
@@ -117,17 +120,40 @@ export function simularPartida(
   };
 }
 
-/** Verifica que las fases cambien exactamente en las semanas 31 y 66. */
+const ORDEN_FASES: FaseJuego[] = ['MUNICIPAL', 'ESTATAL', 'FEDERAL'];
+
+/**
+ * Contrato del calendario de fases (v2.2).
+ *
+ * Las semanas 31 y 66 dejaron de ser el unico momento en que la fase cambia:
+ * quien cierra su embudo antes entra al siguiente orden de gobierno al terminar
+ * el receso parlamentario. Lo que sigue siendo invariante es que:
+ *
+ *  1. Las fases nunca retroceden.
+ *  2. Ninguna fase abre DESPUES de su corte de calendario: el periodo ordinario
+ *     de sesiones arranca en su fecha aunque el jugador no haya cerrado nada.
+ */
 export function verificarCalendarioDeFases(traza: FilaTraza[]): {
   correcto: boolean;
   incidencias: string[];
 } {
   const incidencias: string[] = [];
+  let maxima = 0;
+
   for (const fila of traza) {
-    const esperada = faseDeSemana(fila.semana);
-    if (fila.fase !== esperada) {
-      incidencias.push(`Semana ${fila.semana}: fase ${fila.fase}, se esperaba ${esperada}.`);
+    const indice = ORDEN_FASES.indexOf(fila.fase);
+    if (indice < maxima) {
+      incidencias.push(`Semana ${fila.semana}: la fase retrocedio a ${fila.fase}.`);
+    }
+    maxima = Math.max(maxima, indice);
+
+    const minimaPorCalendario = ORDEN_FASES.indexOf(faseDeSemana(fila.semana));
+    if (indice < minimaPorCalendario) {
+      incidencias.push(
+        `Semana ${fila.semana}: fase ${fila.fase}, el calendario ya exigia ${faseDeSemana(fila.semana)}.`,
+      );
     }
   }
+
   return { correcto: incidencias.length === 0, incidencias };
 }

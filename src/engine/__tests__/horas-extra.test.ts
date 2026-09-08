@@ -11,6 +11,7 @@ import {
   BLOQUE_HORAS_EXTRA,
   COSTO_RESISTENCIA_POR_BLOQUE,
   MAX_BLOQUES_HORAS_EXTRA,
+  RECURSOS_TRAS_NIVEL_0,
   UMBRAL_NIEBLA_MENTAL,
   crearEstadoInicial,
   ejecutarComando,
@@ -23,7 +24,7 @@ import { aplicar, avanzarSemanas, estadoSinComision } from './ayudas';
 
 describe('Horas extra — mecánica de autoexplotación', () => {
   it('cada bloque suma 10 horas al presupuesto semanal', () => {
-    let estado = crearEstadoInicial();
+    let estado = crearEstadoInicial({ saltarNivel0: true });
     estado = aplicar(estado, [{ tipo: 'METER_HORAS_EXTRA' }]);
     expect(estado.recursos.horasExtraMetidas).toBe(BLOQUE_HORAS_EXTRA);
 
@@ -32,7 +33,7 @@ describe('Horas extra — mecánica de autoexplotación', () => {
   });
 
   it('no permite pasar del tope de bloques', () => {
-    let estado = crearEstadoInicial();
+    let estado = crearEstadoInicial({ saltarNivel0: true });
     for (let i = 0; i < MAX_BLOQUES_HORAS_EXTRA; i += 1) {
       estado = aplicar(estado, [{ tipo: 'METER_HORAS_EXTRA' }]);
     }
@@ -50,7 +51,10 @@ describe('Horas extra — mecánica de autoexplotación', () => {
 
     const drenajeMunicipal = 0.5;
     const costoEsperado = 2 * COSTO_RESISTENCIA_POR_BLOQUE;
-    expect(despues.recursos.resistencia).toBeCloseTo(100 - costoEsperado - drenajeMunicipal, 5);
+    expect(despues.recursos.resistencia).toBeCloseTo(
+      RECURSOS_TRAS_NIVEL_0.resistencia - costoEsperado - drenajeMunicipal,
+      5,
+    );
   });
 
   it('reinicia el contador de fatiga cuando el jugador descansa una semana', () => {

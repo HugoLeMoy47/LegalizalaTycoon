@@ -1,9 +1,11 @@
-import { Gavel, HeartHandshake, Megaphone, UserPlus, Users } from 'lucide-react';
+import { Gavel, HeartHandshake, Lock, Megaphone, Sprout, UserPlus, Users } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 import {
   ETIQUETA_VERBO,
+  META_FIRMAS,
   SEMANA_DESBLOQUEO_COLECTIVO,
+  miembroDisponible,
   VERBOS,
   formatearPesos,
   type ComandoJuego,
@@ -19,6 +21,7 @@ const ICONO_ROL: Record<RolColectivo, LucideIcon> = {
   ABOGADA: Gavel,
   VOCERO: Megaphone,
   ENLACE_BASE: HeartHandshake,
+  ACTIVISTA_TERRITORIAL: Sprout,
 };
 
 const ETIQUETA_ROL: Record<RolColectivo, string> = {
@@ -26,6 +29,7 @@ const ETIQUETA_ROL: Record<RolColectivo, string> = {
   ABOGADA: 'Abogada pro-bono',
   VOCERO: 'Vocería',
   ENLACE_BASE: 'Enlace de base',
+  ACTIVISTA_TERRITORIAL: 'Activista territorial',
 };
 
 interface Props {
@@ -149,6 +153,8 @@ function FichaReclutable({
   const Icono = ICONO_ROL[miembro.rol];
   const apoyoOk = estado.recursos.apoyoSocial >= miembro.apoyoSocialMinimo;
   const fondosOk = estado.recursos.fondos >= miembro.costoFondos;
+  // Gael no aparece desde la semana 1: se suma cuando el movimiento existe.
+  const disponible = miembroDisponible(estado, miembro);
 
   return (
     <div className="opacity-90">
@@ -168,13 +174,25 @@ function FichaReclutable({
             <span className={fondosOk ? 'text-favor' : 'text-opositor'}>
               {formatearPesos(miembro.costoFondos)}
             </span>
+            {miembro.firmasMultiplicador !== undefined && (
+              <span className="text-sky-400">
+                Firmas ×{miembro.firmasMultiplicador} en Movilizar
+              </span>
+            )}
           </p>
+
+          {!disponible && (
+            <p className="mt-1.5 flex items-center gap-1 font-tactica text-[10px] text-slate-600">
+              <Lock className="h-3 w-3" aria-hidden />
+              Se acerca al llegar a {META_FIRMAS} firmas o al Congreso del Estado
+            </p>
+          )}
         </div>
 
         <button
           type="button"
           className="boton boton-primario boton-tactil shrink-0"
-          disabled={!apoyoOk || !fondosOk}
+          disabled={!disponible || !apoyoOk || !fondosOk}
           onClick={() => despachar({ tipo: 'RECLUTAR', miembroId: miembro.id })}
         >
           <UserPlus className="h-3 w-3" aria-hidden />

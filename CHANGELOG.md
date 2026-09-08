@@ -7,6 +7,126 @@ proyecto se adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [No publicado]
 
+## [0.3.0] — 2026-09-08
+
+Iteración v2.2. Corresponde a la Entrada #016 de la
+[bitácora de diseño](docs/BITACORA.md) y a la
+[guía del Nivel 0 y la remediación](docs/GUIA_NIVEL0_NARRATIVA_Y_REMEDIACION_v2.2.md).
+
+### Añadido
+
+- **Nivel 0 interactivo "El Rescate de Gael".** Sub-estado `PROLOGO_NIVEL_0`
+  previo a la Semana 1, jugado como chat de red vecinal: tres micro-pasos
+  tácticos (documentar el IPH, movilizar al MP, escalar a Derechos Humanos),
+  una salida bloqueada pedagógicamente (pagar la mordida) y la epifanía que
+  activa el Art. 71 fr. IV. Módulos nuevos: `engine/nivel0.ts`,
+  `engine/data/nivel0.ts` y `ui/components/ChatNivel0.tsx`.
+- **Gael Martínez como aliado reclutable** con el rol
+  `ACTIVISTA_TERRITORIAL`, ×1.25 en recolección de firmas y desbloqueo por
+  fase estatal o 500 firmas.
+- **El embudo se estira.** Dos etapas de trámite nuevas —Foro de Parlamento
+  Abierto y Comisión de Hacienda— que se cuentan en sesiones y no en votos, más
+  la espera del dictamen en el orden del día del Pleno. Campo `tipo` en
+  `Comision`, con `semanasTramite`, `apoyoSocialRequerido` y
+  `seOmiteSiMutilada`.
+- **Ventanas de remediación.** Receso parlamentario fijo de 6 semanas entre
+  fases, sin reloj de la congeladora y con decaimiento de presión al ritmo
+  base. La siguiente fase abre en `min(corte del calendario, fin del receso)`.
+- **Telemetría anónima de learning analytics** (`engine/telemetria.ts`): siete
+  eventos del embudo cívico acumulados en el estado y drenados por `useJuego`.
+  Sin cookies, sin identificadores y sin texto libre del jugador.
+- **`npm run sim:ritmo`**, diagnóstico de en qué semana abre y cierra cada
+  etapa del embudo.
+- Pruebas nuevas: `nivel0.test.ts` (13) y `ritmo.test.ts` (16).
+
+### Cambiado
+
+- **El dilema de la ley mutilada tiene un segundo disparador:** entrar a la
+  Comisión de Presupuesto. Con el embudo estirado el reloj casi nunca baja de
+  tres semanas, así que el dilema ético se había vuelto inalcanzable. Ahora el
+  chantaje es más limpio y más real: sin presupuesto, Hacienda no tiene qué
+  dictaminar y te ahorras la comisión entera.
+- **Recalibración municipal:** la Comisión de Gobernación exige 5 de 7 votos
+  (antes 4) y 35% de Solidez Técnica (antes 30).
+- **Recursos de arranque** definidos por el Nivel 0: Apoyo 35%, Solidez 15%,
+  Resistencia 90%. La Presión Política que el chat acumula no se transfiere.
+- `verificarCalendarioDeFases` verifica un contrato nuevo: las fases nunca
+  retroceden y ninguna abre después de su corte de calendario, pero pueden
+  abrir antes si el jugador cerró su embudo.
+- La clave de partida guardada sube a `iniciativa-ciudadana:partida:v22`.
+
+### Eliminado
+
+- `PrologoModal.tsx`, sustituido por el chat del Nivel 0.
+
+### Medición
+
+- `npm run sim:huecos`: **54 → 13 semanas muertas** por partida, idéntico en
+  las seis semillas. Criterio de aceptación de la guía (< 15) cumplido.
+- Matriz de arquetipos: Estratega `VICTORIA_DOF` sem 85 · Pragmático
+  `VICTORIA_DOF` **mutilada** sem 76 · Líder mártir `DERROTA_BURNOUT` sem 4 ·
+  Observador pasivo `DERROTA_CONGELADORA` sem 21.
+
+## [0.3.0] — 2026-09-08
+
+Iteración v2.2. Corresponde a la Entrada #016 de la
+[bitácora de diseño](docs/BITACORA.md) y a la
+[guía del Nivel 0 y la remediación](docs/GUIA_NIVEL0_NARRATIVA_Y_REMEDIACION_v2.2.md).
+
+### Añadido
+
+- **Nivel 0 interactivo "El Rescate de Gael".** Sub-estado `PROLOGO_NIVEL_0`
+  previo a la Semana 1, jugado como chat de red vecinal: tres micro-pasos
+  tácticos (documentar el IPH, movilizar al MP, escalar a Derechos Humanos),
+  una salida bloqueada pedagógicamente (pagar la mordida) y la epifanía que
+  activa el Art. 71 fr. IV. Módulos nuevos: `engine/nivel0.ts`,
+  `engine/data/nivel0.ts` y `ui/components/ChatNivel0.tsx`.
+- **Gael Martínez como aliado reclutable** con el rol
+  `ACTIVISTA_TERRITORIAL`, ×1.25 en recolección de firmas y desbloqueo por
+  fase estatal o 500 firmas.
+- **El embudo se estira.** Dos etapas de trámite nuevas —Foro de Parlamento
+  Abierto y Comisión de Hacienda— que se cuentan en sesiones y no en votos, más
+  la espera del dictamen en el orden del día del Pleno. Campo `tipo` en
+  `Comision`, con `semanasTramite`, `apoyoSocialRequerido` y
+  `seOmiteSiMutilada`.
+- **Ventanas de remediación.** Receso parlamentario fijo de 6 semanas entre
+  fases, sin reloj de la congeladora y con decaimiento de presión al ritmo
+  base. La siguiente fase abre en `min(corte del calendario, fin del receso)`.
+- **Telemetría anónima de learning analytics** (`engine/telemetria.ts`): siete
+  eventos del embudo cívico acumulados en el estado y drenados por `useJuego`.
+  Sin cookies, sin identificadores y sin texto libre del jugador.
+- **`npm run sim:ritmo`**, diagnóstico de en qué semana abre y cierra cada
+  etapa del embudo.
+- Pruebas nuevas: `nivel0.test.ts` (13) y `ritmo.test.ts` (16).
+
+### Cambiado
+
+- **El dilema de la ley mutilada tiene un segundo disparador:** entrar a la
+  Comisión de Presupuesto. Con el embudo estirado el reloj casi nunca baja de
+  tres semanas, así que el dilema ético se había vuelto inalcanzable. Ahora el
+  chantaje es más limpio y más real: sin presupuesto, Hacienda no tiene qué
+  dictaminar y te ahorras la comisión entera.
+- **Recalibración municipal:** la Comisión de Gobernación exige 5 de 7 votos
+  (antes 4) y 35% de Solidez Técnica (antes 30).
+- **Recursos de arranque** definidos por el Nivel 0: Apoyo 35%, Solidez 15%,
+  Resistencia 90%. La Presión Política que el chat acumula no se transfiere.
+- `verificarCalendarioDeFases` verifica un contrato nuevo: las fases nunca
+  retroceden y ninguna abre después de su corte de calendario, pero pueden
+  abrir antes si el jugador cerró su embudo.
+- La clave de partida guardada sube a `iniciativa-ciudadana:partida:v22`.
+
+### Eliminado
+
+- `PrologoModal.tsx`, sustituido por el chat del Nivel 0.
+
+### Medición
+
+- `npm run sim:huecos`: **54 → 13 semanas muertas** por partida, idéntico en
+  las seis semillas. Criterio de aceptación de la guía (< 15) cumplido.
+- Matriz de arquetipos: Estratega `VICTORIA_DOF` sem 85 · Pragmático
+  `VICTORIA_DOF` **mutilada** sem 76 · Líder mártir `DERROTA_BURNOUT` sem 4 ·
+  Observador pasivo `DERROTA_CONGELADORA` sem 21.
+
 ## [0.2.0] — 2026-09-07
 
 Refinamiento v2.0. Corresponde a las Entradas #012 y #013 de la

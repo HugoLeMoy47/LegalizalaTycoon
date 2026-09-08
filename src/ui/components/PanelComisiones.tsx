@@ -1,11 +1,21 @@
-import { Banknote, Handshake, Snowflake, Vote } from 'lucide-react';
+import {
+  Banknote,
+  CalendarClock,
+  Handshake,
+  MessagesSquare,
+  Snowflake,
+  Vote,
+} from 'lucide-react';
 
 import {
   BANCADAS,
   GLOSARIO,
   SEMANA_DESBLOQUEO_COMISION,
   TOOLTIP_BANCADA,
+  esperaOrdenDelDia,
   estadoCongeladora,
+  estadoReceso,
+  estadoTramite,
   formatearPesos,
   semaforoComision,
   type ComandoJuego,
@@ -52,24 +62,65 @@ export function PanelComisiones({ estado, despachar }: Props) {
   const votos = semaforoComision(estado);
   const reloj = estadoCongeladora(estado);
 
+  const receso = estadoReceso(estado);
+
   if (!comision) {
     return (
       <section className="panel">
         <h2 className="panel-titulo">
-          <Vote className="h-3.5 w-3.5" aria-hidden />
-          Comisión dictaminadora
+          <CalendarClock className="h-3.5 w-3.5" aria-hidden />
+          {receso.activo ? 'Receso parlamentario' : 'Comisión dictaminadora'}
         </h2>
-        <p className="px-4 py-6 text-center text-sm leading-relaxed text-slate-500">
-          No hay asunto turnado en este momento. El siguiente orden de gobierno abre su periodo de
-          sesiones cuando lo marque el calendario legislativo.
-          <br />
-          <span className="mt-2 block font-tactica text-[11px] text-slate-600">
-            Aprovecha el receso: recluta, levanta fondos, blinda el texto y recupera resistencia.
-          </span>
-        </p>
+        <div className="px-4 py-5">
+          {receso.activo ? (
+            <>
+              <p className="text-center font-tactica text-2xl font-semibold tabular-nums text-olivo-400">
+                {receso.semanasRestantes}
+                <span className="ml-1 text-sm font-normal text-slate-500">
+                  {receso.semanasRestantes === 1 ? 'semana' : 'semanas'}
+                </span>
+              </p>
+              <p className="mt-1 text-center text-[12px] leading-relaxed text-slate-400">
+                El Congreso cerró su periodo ordinario. Abre de nuevo en la semana{' '}
+                <b className="text-papel-100">{receso.semanaApertura}</b>.
+              </p>
+              <p className="mt-3 rounded border border-olivo-500/40 bg-olivo-600/10 px-3 py-2 text-[11px] leading-snug text-olivo-400">
+                <b>El reloj de la congeladora no corre.</b> Es el único tramo de la partida en el
+                que el tiempo no juega en tu contra.{' '}
+                <Tooltip titulo="Receso parlamentario" contenido={GLOSARIO.RECESO} posicion="abajo" />
+              </p>
+              <ul className="mt-3 space-y-1.5 border-t border-pizarra-600/70 pt-3 text-[11px] leading-snug text-slate-400">
+                <li>
+                  <b className="text-slate-300">Autocuidado</b> — la siguiente fase drena más
+                  Resistencia por semana que esta.
+                </li>
+                <li>
+                  <b className="text-slate-300">Movilizar</b> — el próximo foro de parlamento
+                  abierto te va a pedir más Apoyo Social.
+                </li>
+                <li>
+                  <b className="text-slate-300">Investigar</b> — el articulado que sirvió aquí no
+                  alcanza para la instancia que sigue.
+                </li>
+                <li>
+                  <b className="text-slate-300">Reclutar</b> — con fondos y apoyo, es el momento de
+                  sumar perfiles al colectivo.
+                </li>
+              </ul>
+            </>
+          ) : (
+            <p className="text-center text-sm leading-relaxed text-slate-500">
+              No hay asunto turnado en este momento. El siguiente orden de gobierno abre su periodo
+              de sesiones cuando lo marque el calendario legislativo.
+            </p>
+          )}
+        </div>
       </section>
     );
   }
+
+  const tramite = estadoTramite(estado);
+  const ordenDelDia = esperaOrdenDelDia(estado);
 
   return (
     <section className="panel">
@@ -78,7 +129,76 @@ export function PanelComisiones({ estado, despachar }: Props) {
         {comision.nombre}
       </h2>
 
+      {/*
+       * Las etapas de trámite no se votan: se aguantan. El panel cambia de cara
+       * para que el jugador no busque legisladores que no existen.
+       */}
+      {tramite.esTramite && tramite.requisito && (
+        <div className="border-b border-pizarra-600/70 px-4 py-3">
+          <p className="flex items-center gap-1.5 font-tactica text-[11px] uppercase tracking-[0.12em] text-slate-400">
+            <MessagesSquare className="h-3.5 w-3.5" aria-hidden />
+            {tramite.clase === 'PARLAMENTO_ABIERTO' ? 'Foro de consulta' : 'Opinión de Hacienda'}
+            <Tooltip
+              titulo={
+                tramite.clase === 'PARLAMENTO_ABIERTO'
+                  ? 'Parlamento abierto'
+                  : 'Comisión de Presupuesto'
+              }
+              contenido={
+                tramite.clase === 'PARLAMENTO_ABIERTO'
+                  ? GLOSARIO.PARLAMENTO_ABIERTO
+                  : GLOSARIO.COMISION_PRESUPUESTO
+              }
+              posicion="abajo"
+            />
+          </p>
+          <p className="mt-1.5 text-[12px] leading-relaxed text-slate-400">
+            {tramite.clase === 'PARLAMENTO_ABIERTO'
+              ? 'Aquí no hay votos que juntar. La comisión convoca sesiones públicas y tú sostienes la sala llena mientras el reloj corre.'
+              : 'Hacienda revisa el impacto presupuestario de la ley. No se negocia con nadie: se aguanta el calendario con el texto en regla.'}
+          </p>
+
+          <div className="mt-3 flex items-baseline justify-between">
+            <span className="etiqueta">Sesiones</span>
+            <span className="font-tactica text-sm font-semibold tabular-nums text-papel-100">
+              {tramite.sesionesCumplidas}
+              <span className="text-slate-500"> / {tramite.sesionesTotales}</span>
+            </span>
+          </div>
+          <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-pizarra-900">
+            <div
+              className="h-full rounded-full bg-olivo-500 transition-[width] duration-500"
+              style={{
+                width: `${(tramite.sesionesCumplidas / Math.max(1, tramite.sesionesTotales)) * 100}%`,
+              }}
+            />
+          </div>
+
+          <p
+            className={`mt-2.5 rounded border px-2.5 py-1.5 font-tactica text-[11px] leading-snug ${
+              tramite.atorado
+                ? 'border-opositor/40 bg-opositor/10 text-opositor'
+                : 'border-favor/30 bg-favor/10 text-favor'
+            }`}
+          >
+            {tramite.atorado
+              ? `Trámite detenido: exige ${tramite.requisito.minimo}% de ${tramite.requisito.etiqueta} y llevas ${tramite.requisito.actual}%. Las sesiones no avanzan y el reloj sí.`
+              : `${tramite.requisito.etiqueta} ${tramite.requisito.actual}% · el mínimo es ${tramite.requisito.minimo}%. Sostenlo hasta la última sesión.`}
+          </p>
+        </div>
+      )}
+
+      {ordenDelDia.activa && (
+        <p className="border-b border-pizarra-600/70 bg-sky-950/40 px-4 py-2 font-tactica text-[11px] leading-snug text-sky-300">
+          Dictamen enlistado en el orden del día · sesión {ordenDelDia.sesion} de{' '}
+          {ordenDelDia.total}. Tener el dictamen no es tener la votación: la Mesa Directiva decide
+          cuándo lo sube a tribuna.{' '}
+          <Tooltip titulo="Orden del día" contenido={GLOSARIO.ORDEN_DEL_DIA} posicion="abajo" />
+        </p>
+      )}
+
       {/* Semáforo agregado y reloj de la congeladora */}
+      {!tramite.esTramite && (
       <div className="grid grid-cols-2 gap-3 border-b border-pizarra-600/70 px-4 py-3 sm:grid-cols-4">
         <Marcador etiqueta="A favor" valor={votos.FAVOR} clase="text-favor" />
         <Marcador etiqueta="Indecisos" valor={votos.INDECISO} clase="text-indeciso" />
@@ -89,6 +209,7 @@ export function PanelComisiones({ estado, despachar }: Props) {
           clase={votos.suficientes ? 'text-favor' : 'text-slate-300'}
         />
       </div>
+      )}
 
       {reloj.activa && (
         <div className="border-b border-pizarra-600/70 px-4 py-2.5">
@@ -121,14 +242,14 @@ export function PanelComisiones({ estado, despachar }: Props) {
         </div>
       )}
 
-      {comision.dictamenAprobado && (
+      {comision.dictamenAprobado && !tramite.esTramite && (
         <p className="border-b border-pizarra-600/70 bg-favor/10 px-4 py-2 font-tactica text-[11px] text-favor">
           Dictamen aprobado. Falta que el Pleno lo agende: necesitas{' '}
           {comision.presionPlenoRequerida}% de Presión Política.
         </p>
       )}
 
-      {estado.solidezTecnica < comision.solidezTecnicaRequerida && (
+      {!tramite.esTramite && estado.solidezTecnica < comision.solidezTecnicaRequerida && (
         <p className="border-b border-pizarra-600/70 bg-alerta/10 px-4 py-2 font-tactica text-[11px] text-alerta">
           Solidez Técnica insuficiente: esta comisión exige {comision.solidezTecnicaRequerida}% y
           llevas {Math.round(estado.solidezTecnica)}%. Con los votos pero sin el texto, te devuelven

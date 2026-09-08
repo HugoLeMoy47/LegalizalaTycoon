@@ -7,7 +7,7 @@
  * A diferencia de `ModalDecision`, no bloquea el turno: es un acuse.
  */
 
-import { Stamp, Users } from 'lucide-react';
+import { CalendarClock, Stamp, Users } from 'lucide-react';
 
 import type { HitoDesbloqueo } from '../../engine';
 
@@ -19,7 +19,13 @@ export function HitoModal({
   onCerrar: () => void;
 }) {
   const esComision = hito.id === 'COMISION_ABIERTA';
-  const Icono = esComision ? Stamp : Users;
+  const esReceso = hito.id === 'RECESO_ABIERTO';
+  const Icono = esReceso ? CalendarClock : esComision ? Stamp : Users;
+  const encabezado = esReceso
+    ? 'Ventana de remediación'
+    : esComision
+      ? 'Etapa C · Entrada al Cabildo'
+      : 'Etapa B · Cuartel del Colectivo';
 
   return (
     <div
@@ -31,7 +37,7 @@ export function HitoModal({
       <div className="panel w-full max-w-lg animate-aparecer border-olivo-500/60">
         <h2 className="panel-titulo border-olivo-500/40 text-olivo-400">
           <Icono className="h-3.5 w-3.5" aria-hidden />
-          {esComision ? 'Etapa C · Entrada al Cabildo' : 'Etapa B · Cuartel del Colectivo'}
+          {encabezado}
         </h2>
 
         <div className="p-5">

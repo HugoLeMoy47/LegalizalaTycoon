@@ -22,8 +22,9 @@ import {
 import { DURACION_TRANSICION_MS } from '../components/TransicionSemana';
 import { sonarSello } from '../audio/sello';
 
-const CLAVE_PARTIDA = 'iniciativa-ciudadana:partida:v2';
-const CLAVE_PROLOGO = 'iniciativa-ciudadana:prologo-visto';
+// v2.2: el esquema cambio (Nivel 0, recesos, telemetria). Una partida v2 no
+// se puede reanudar sobre el modelo nuevo, asi que la clave sube de version.
+const CLAVE_PARTIDA = 'iniciativa-ciudadana:partida:v22';
 /** La guía v2.0 nombra explícitamente esta clave. */
 const CLAVE_TUTORIAL = 'tutorial_visto';
 
@@ -66,6 +67,7 @@ function cargarPartidaGuardada(): GameState | null {
     // Validación mínima: si el esquema cambió, se descarta y se empieza limpio.
     if (typeof guardado?.semanaActual !== 'number' || !guardado?.recursos) return null;
     if (typeof guardado.comisionDesbloqueada !== 'boolean') return null;
+    if (!guardado.nivel0 || !Array.isArray(guardado.telemetria)) return null;
     // Partidas anteriores al marcador de lectura: se dan por leidas.
     if (typeof guardado.registroLeidoHasta !== 'number') {
       guardado.registroLeidoHasta = guardado.registro?.length ?? 0;
@@ -83,7 +85,6 @@ export function useJuego() {
   const [avisos, setAvisos] = useState<Aviso[]>([]);
   const [transicion, setTransicion] = useState<Transicion | null>(null);
   const [bloqueado, setBloqueado] = useState(false);
-  const [prologoVisto, setPrologoVisto] = useState(() => leerBandera(CLAVE_PROLOGO));
   const [tutorialVisto, setTutorialVisto] = useState(() => leerBandera(CLAVE_TUTORIAL));
 
   const contadorAviso = useRef(0);
@@ -142,11 +143,6 @@ export function useJuego() {
     [bloqueado, mostrarAviso],
   );
 
-  const asumirMandato = useCallback(() => {
-    escribirBandera(CLAVE_PROLOGO, true);
-    setPrologoVisto(true);
-  }, []);
-
   const terminarTutorial = useCallback(() => {
     escribirBandera(CLAVE_TUTORIAL, true);
     setTutorialVisto(true);
@@ -164,8 +160,6 @@ export function useJuego() {
     } catch {
       /* sin persistencia disponible */
     }
-    escribirBandera(CLAVE_PROLOGO, false);
-    setPrologoVisto(false);
     setEstado(crearEstadoInicial({ semilla: Date.now() % 100_000_000 }));
     setAvisos([]);
     setTransicion(null);
@@ -176,6 +170,24 @@ export function useJuego() {
     [estado.estadoJuego],
   );
 
+  /*
+   * Sumidero de telemetria (GUIA v2.2 seccion 6).
+   *
+   * El motor solo acumula eventos anonimos en el estado; aqui se estampa el
+   * reloj y se entregan una sola vez. Hoy van a la consola: ni cookies, ni
+   * identificadores, ni texto libre del jugador. Cambiar de destino es cambiar
+   * este efecto y nada mas.
+   */
+  const telemetriaEntregada = useRef(0);
+  useEffect(() => {
+    const pendientes = estado.telemetria.slice(telemetriaEntregada.current);
+    if (pendientes.length === 0) return;
+    telemetriaEntregada.current = estado.telemetria.length;
+    for (const evento of pendientes) {
+      console.info('[TELEMETRIA]', { ...evento, timestamp: Date.now() });
+    }
+  }, [estado.telemetria]);
+
   return {
     estado,
     despachar,
@@ -185,8 +197,7 @@ export function useJuego() {
     bloqueado,
     transicion,
     limpiarTransicion: useCallback(() => setTransicion(null), []),
-    prologoVisto,
-    asumirMandato,
+    enPrologo: estado.estadoJuego === 'PROLOGO_NIVEL_0',
     tutorialVisto,
     terminarTutorial,
     repetirTutorial,

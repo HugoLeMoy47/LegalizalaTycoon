@@ -48,7 +48,7 @@ describe('Desacoplamiento del Core Engine', () => {
 
 describe('Inmutabilidad de la frontera pública', () => {
   it('ejecutarComando no muta el estado recibido', () => {
-    const estado = crearEstadoInicial({ semilla: 42 });
+    const estado = crearEstadoInicial({ semilla: 42, saltarNivel0: true });
     const copia = structuredClone(estado);
 
     ejecutarComando(estado, { tipo: 'ASIGNAR_HORAS', verbo: 'MOVILIZAR', horas: 20 });
@@ -59,7 +59,7 @@ describe('Inmutabilidad de la frontera pública', () => {
   });
 
   it('avanzar la semana devuelve un objeto nuevo', () => {
-    const estado = crearEstadoInicial({ semilla: 42 });
+    const estado = crearEstadoInicial({ semilla: 42, saltarNivel0: true });
     const resultado = ejecutarComando(estado, { tipo: 'AVANZAR_SEMANA' });
     expect(resultado.estado).not.toBe(estado);
     expect(resultado.estado.semanaActual).toBe(2);
@@ -67,7 +67,7 @@ describe('Inmutabilidad de la frontera pública', () => {
   });
 
   it('rechaza comandos inválidos sin alterar el estado', () => {
-    const estado = crearEstadoInicial();
+    const estado = crearEstadoInicial({ saltarNivel0: true });
     const intento = ejecutarComando(estado, {
       tipo: 'CABILDEAR_LEGISLADOR',
       legisladorId: 'no-existe',
@@ -80,8 +80,8 @@ describe('Inmutabilidad de la frontera pública', () => {
 
 describe('Determinismo del generador pseudoaleatorio', () => {
   it('dos partidas con la misma semilla producen el mismo estado', () => {
-    const a = crearEstadoInicial({ semilla: 20260906 });
-    const b = crearEstadoInicial({ semilla: 20260906 });
+    const a = crearEstadoInicial({ semilla: 20260906, saltarNivel0: true });
+    const b = crearEstadoInicial({ semilla: 20260906, saltarNivel0: true });
 
     let estadoA = a;
     let estadoB = b;
@@ -115,7 +115,7 @@ describe('Funciones puras de balance', () => {
   });
 
   it('calcularRendimiento no altera el estado (solo proyecta)', () => {
-    const estado = crearEstadoInicial();
+    const estado = crearEstadoInicial({ saltarNivel0: true });
     estado.asignaciones.MOVILIZAR = 40;
     const copia = structuredClone(estado);
     const proyeccion = calcularRendimiento(estado);
@@ -128,7 +128,7 @@ describe('Funciones puras de balance', () => {
 
 describe('Espejo del historial normativo', () => {
   it('historialEventos refleja cada entrada de la bitácora estructurada', () => {
-    let estado = crearEstadoInicial();
+    let estado = crearEstadoInicial({ saltarNivel0: true });
     for (let i = 0; i < 10; i += 1) {
       estado = ejecutarComando(estado, { tipo: 'AVANZAR_SEMANA' }).estado;
     }

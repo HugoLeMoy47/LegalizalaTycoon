@@ -61,10 +61,27 @@ de jugador y sus desenlaces:
 
 | Política | Desenlace típico | Lección |
 | :--- | :--- | :--- |
-| Estratega colectivo | `VICTORIA_DOF` (semana 88) | Delegar y descansar es estrategia |
-| Pragmático | `VICTORIA_DOF` mutilada (semana 86) | Se puede ganar la foto y perder la ley |
-| Líder mártir | `DERROTA_BURNOUT` (semana 5) | La autoexplotación no escala |
+| Estratega colectivo | `VICTORIA_DOF` (semana 85) | Delegar y descansar es estrategia |
+| Pragmático | `VICTORIA_DOF` mutilada (semana 76) | Se puede ganar la foto y perder la ley — nueve semanas antes |
+| Líder mártir | `DERROTA_BURNOUT` (semana 4) | La autoexplotación no escala |
 | Observador pasivo | `DERROTA_CONGELADORA` (semana 21) | El tiempo parlamentario corre solo |
+
+Dos herramientas más miden el **ritmo**, que es la parte del diseño que no se ve
+en una captura de pantalla:
+
+```bash
+npm run sim:huecos
+```
+
+```bash
+npm run sim:ritmo
+```
+
+`sim:huecos` cuenta las semanas en las que el jugador no tiene ninguna etapa
+activa —las "semanas desérticas"— sobre seis semillas distintas. `sim:ritmo`
+imprime en qué semana abre y cierra cada etapa del embudo legislativo. Fueron las
+dos herramientas con las que se bajó el ritmo muerto de **54 a 13 semanas** por
+partida en la v2.2.
 
 ### Otros comandos
 
@@ -179,8 +196,15 @@ solitario no escala, antes de darte a nadie con quien repartir la carga.
   que representan) y **las estimaciones en pantalla se distorsionan con sesgo
   pesimista**. El motor sigue calculando bien; el que ya no lee bien eres tú.
 
-* **Prólogo narrativo** — antes del War Room se abre el expediente policial de
-  Gael: la detención arbitraria y la extorsión que detonan la iniciativa.
+* **Nivel 0 interactivo "El Rescate de Gael"** — antes de que arranque el reloj
+  de las 100 semanas se juega un chat de red vecinal donde hay que resolver una
+  detención arbitraria sin pagar mordida. Tres micro-pasos enseñan los tres
+  recursos que administra la partida —documentar, movilizar, escalar— y la
+  epifanía final activa el mandato del Art. 71 fr. IV. Gael vuelve después como
+  aliado reclutable del colectivo.
+* **Ventanas de remediación** — entre fases hay un receso parlamentario fijo en
+  el que el Reloj de la Congeladora no corre: sirve para sanar Resistencia,
+  reclutar y blindar el texto antes de la instancia siguiente.
 * **Onboarding guiado** — cuatro pasos con spotlight sobre el componente que se
   explica, omitible y recordado entre partidas.
 * **Feedback sensorial** — al cerrar la semana se estampa un sello con golpe de

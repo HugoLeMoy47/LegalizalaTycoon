@@ -14,7 +14,8 @@ import {
   VICTORIA,
 } from './balance';
 import { ETIQUETAS_DISTORSION, PENSAMIENTOS_INTRUSIVOS } from './data/narrativa';
-import { VERBOS, aliadosActivos, presupuestoHorasLider } from './estado';
+import { SEMANAS_ORDEN_DEL_DIA } from './balance';
+import { VERBOS, aliadosActivos, enReceso, presupuestoHorasLider } from './estado';
 import { contarVotos } from './legislativo';
 import { horasPorVerbo } from './acciones';
 import type { GameState, MiembroColectivo, RegistroEvento, TipoEvento, VerboAccion } from './types';
@@ -143,6 +144,84 @@ export function checklistVictoria(estado: GameState) {
 }
 
 // ---------------------------------------------------------------------------
+// Etapa de tramite y receso parlamentario (v2.2)
+// ---------------------------------------------------------------------------
+
+export interface EstadoTramite {
+  /** La etapa activa se cuenta en sesiones, no en votos. */
+  esTramite: boolean;
+  /** Foro de consulta o dictamen de Hacienda. */
+  clase: 'PARLAMENTO_ABIERTO' | 'PRESUPUESTO' | null;
+  sesionesCumplidas: number;
+  sesionesTotales: number;
+  /** Umbral que hay que sostener para que el tramite avance. */
+  requisito: { etiqueta: string; actual: number; minimo: number } | null;
+  /** El tramite esta detenido porque el requisito no se cumple. */
+  atorado: boolean;
+}
+
+/**
+ * Estado de la etapa de tramite activa (foro de parlamento abierto u opinion
+ * de Hacienda). Ninguna de las dos se vota: consumen sesiones y exigen sostener
+ * un umbral mientras el reloj corre.
+ */
+export function estadoTramite(estado: GameState): EstadoTramite {
+  const comision = estado.comisionActiva;
+  const vacio: EstadoTramite = {
+    esTramite: false,
+    clase: null,
+    sesionesCumplidas: 0,
+    sesionesTotales: 0,
+    requisito: null,
+    atorado: false,
+  };
+  if (!comision || comision.tipo === 'DICTAMINADORA') return vacio;
+
+  const esForo = comision.tipo === 'PARLAMENTO_ABIERTO';
+  const actual = esForo ? estado.recursos.apoyoSocial : estado.solidezTecnica;
+  const minimo = esForo ? comision.apoyoSocialRequerido : comision.solidezTecnicaRequerida;
+
+  return {
+    esTramite: true,
+    clase: comision.tipo,
+    sesionesCumplidas: comision.semanasTramiteCumplidas,
+    sesionesTotales: comision.semanasTramite,
+    requisito: {
+      etiqueta: esForo ? 'Apoyo Social' : 'Solidez Técnica',
+      actual: Math.round(actual),
+      minimo,
+    },
+    atorado: actual < minimo,
+  };
+}
+
+export interface EstadoReceso {
+  activo: boolean;
+  semanasRestantes: number;
+  semanaApertura: number;
+}
+
+/** Receso parlamentario: la ventana de remediacion entre fases. */
+export function estadoReceso(estado: GameState): EstadoReceso {
+  if (!enReceso(estado)) return { activo: false, semanasRestantes: 0, semanaApertura: 0 };
+  return {
+    activo: true,
+    semanasRestantes: (estado.recesoHasta ?? 0) - estado.semanaActual,
+    semanaApertura: estado.recesoHasta ?? 0,
+  };
+}
+
+/** Espera del dictamen en el orden del dia del Pleno. */
+export function esperaOrdenDelDia(estado: GameState): { activa: boolean; sesion: number; total: number } {
+  const total = SEMANAS_ORDEN_DEL_DIA[estado.faseActual];
+  return {
+    activa: estado.semanasEnOrdenDelDia > 0,
+    sesion: estado.semanasEnOrdenDelDia,
+    total,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Novedades de la bitácora (v2.1)
 // ---------------------------------------------------------------------------
 
@@ -233,8 +312,10 @@ export function pasosDelTurno(estado: GameState): PasoTurno[] {
   const presupuesto = presupuestoHorasLider(estado);
   const aliadosConTarea = aliadosActivos(estado).filter((m) => m.horasAsignadas > 0).length;
 
+  const tramite = estadoTramite(estado);
   const votos = semaforoComision(estado);
-  const faltanVotos = Boolean(estado.comisionActiva) && !votos.suficientes;
+  const faltanVotos =
+    Boolean(estado.comisionActiva) && !tramite.esTramite && !votos.suficientes;
   const hayAQuienCabildear = Boolean(
     estado.comisionActiva?.legisladores.some((l) => l.postura !== 'FAVOR'),
   );
@@ -253,12 +334,18 @@ export function pasosDelTurno(estado: GameState): PasoTurno[] {
     {
       id: 'CABILDEAR',
       numero: 2,
-      etiqueta: 'Convence legisladores',
-      pista: faltanVotos
-        ? `Te faltan ${votos.requeridos - votos.FAVOR} votos para que la comisión dictamine.`
-        : 'Ya tienes los votos que necesita la comisión.',
-      hecho: Boolean(estado.comisionActiva) && votos.suficientes,
-      disponible: estado.comisionDesbloqueada && faltanVotos && hayAQuienCabildear,
+      etiqueta: tramite.esTramite ? 'Sostén el trámite' : 'Convence legisladores',
+      pista: tramite.esTramite
+        ? tramite.atorado
+          ? `El trámite está detenido: necesitas ${tramite.requisito?.minimo}% de ${tramite.requisito?.etiqueta} (tienes ${tramite.requisito?.actual}%).`
+          : `Sesión ${tramite.sesionesCumplidas} de ${tramite.sesionesTotales}. Aquí no se vota: hay que aguantar el calendario.`
+        : faltanVotos
+          ? `Te faltan ${votos.requeridos - votos.FAVOR} votos para que la comisión dictamine.`
+          : 'Ya tienes los votos que necesita la comisión.',
+      hecho: tramite.esTramite
+        ? !tramite.atorado
+        : Boolean(estado.comisionActiva) && votos.suficientes,
+      disponible: estado.comisionDesbloqueada && (tramite.atorado || (faltanVotos && hayAQuienCabildear)),
     },
     {
       id: 'CERRAR',
@@ -267,7 +354,9 @@ export function pasosDelTurno(estado: GameState): PasoTurno[] {
       pista:
         estado.decisionPendiente !== null
           ? 'Primero resuelve el dilema que tienes sobre la mesa.'
-          : 'Cuando termines, avanza el calendario.',
+          : estadoReceso(estado).activo
+            ? `Receso: quedan ${estadoReceso(estado).semanasRestantes} semanas sin reloj en contra. Corre el calendario y aprovéchalas.`
+            : 'Cuando termines, avanza el calendario.',
       hecho: false,
       disponible: estado.decisionPendiente === null,
     },

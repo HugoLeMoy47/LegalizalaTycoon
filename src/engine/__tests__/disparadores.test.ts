@@ -77,7 +77,7 @@ describe('Ruptura interna (apoyo < 25)', () => {
 
 describe('Dilema de la Ley Mutilada', () => {
   function estadoConOfertaEnMesa() {
-    const estado = crearEstadoInicial();
+    const estado = crearEstadoInicial({ saltarNivel0: true });
     estado.comisionActiva!.relojCongeladoraSemanas = UMBRAL_OFERTA_MUTILACION;
     dispararOfertaMutilacion(estado);
     return estado;
@@ -90,7 +90,7 @@ describe('Dilema de la Ley Mutilada', () => {
   });
 
   it('no aparece mientras el reloj tenga holgura', () => {
-    const estado = crearEstadoInicial();
+    const estado = crearEstadoInicial({ saltarNivel0: true });
     estado.comisionActiva!.relojCongeladoraSemanas = UMBRAL_OFERTA_MUTILACION + 5;
     dispararOfertaMutilacion(estado);
     expect(estado.decisionPendiente).toBeNull();
@@ -128,7 +128,7 @@ describe('Dilema de la Ley Mutilada', () => {
 
 describe('Cabildeo directo y compra de votos', () => {
   it('convence a un legislador gastando presión política', () => {
-    let estado = conSistemasDesbloqueados(crearEstadoInicial());
+    let estado = conSistemasDesbloqueados(crearEstadoInicial({ saltarNivel0: true }));
     estado.recursos.presionPolitica = 60;
     const objetivo = estado.comisionActiva!.legisladores.find((l) => l.postura === 'INDECISO')!;
 
@@ -140,7 +140,7 @@ describe('Cabildeo directo y compra de votos', () => {
   });
 
   it('un opositor necesita dos sesiones para llegar a favor', () => {
-    let estado = conSistemasDesbloqueados(crearEstadoInicial());
+    let estado = conSistemasDesbloqueados(crearEstadoInicial({ saltarNivel0: true }));
     estado.recursos.presionPolitica = 100;
     const objetivo = estado.comisionActiva!.legisladores.find((l) => l.postura === 'OPOSITOR')!;
 
@@ -156,7 +156,7 @@ describe('Cabildeo directo y compra de votos', () => {
   });
 
   it('rechaza el cabildeo si no alcanza la presión política', () => {
-    const estado = conSistemasDesbloqueados(crearEstadoInicial());
+    const estado = conSistemasDesbloqueados(crearEstadoInicial({ saltarNivel0: true }));
     estado.recursos.presionPolitica = 1;
     const objetivo = estado.comisionActiva!.legisladores.find((l) => l.postura !== 'FAVOR')!;
     const intento = ejecutarComando(estado, {
@@ -168,7 +168,7 @@ describe('Cabildeo directo y compra de votos', () => {
   });
 
   it('solo la bancada satélite vende su voto en efectivo', () => {
-    const estado = conSistemasDesbloqueados(crearEstadoInicial());
+    const estado = conSistemasDesbloqueados(crearEstadoInicial({ saltarNivel0: true }));
     const mercenario = estado.comisionActiva!.legisladores.find(
       (l) => l.precioVotoFondos !== undefined,
     )!;
@@ -190,7 +190,7 @@ describe('Cabildeo directo y compra de votos', () => {
 
 describe('Reclutamiento del colectivo', () => {
   it('exige apoyo social mínimo y fondos suficientes', () => {
-    const estado = conSistemasDesbloqueados(crearEstadoInicial());
+    const estado = conSistemasDesbloqueados(crearEstadoInicial({ saltarNivel0: true }));
     const sofia = estado.colectivo.find((m) => m.rol === 'ABOGADA')!;
 
     estado.recursos.apoyoSocial = sofia.apoyoSocialMinimo - 1;
@@ -210,7 +210,7 @@ describe('Reclutamiento del colectivo', () => {
   });
 
   it('las horas de los aliados no salen del presupuesto del líder', () => {
-    let estado = conSistemasDesbloqueados(crearEstadoInicial());
+    let estado = conSistemasDesbloqueados(crearEstadoInicial({ saltarNivel0: true }));
     estado.recursos.apoyoSocial = 40;
     const lupita = estado.colectivo.find((m) => m.rol === 'ENLACE_BASE')!;
 

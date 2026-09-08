@@ -154,7 +154,7 @@ export function MapaNodos({ estado }: { estado: GameState }) {
                   y={y}
                   width={ANCHO_CAJA}
                   height={ALTO_CAJA}
-                  rx={esPromulgacion ? 22 : 5}
+                  rx={esPromulgacion ? 22 : nodo.tipo === 'CONSULTA' ? 14 : 5}
                   fill={estilo.relleno}
                   stroke={estilo.borde}
                   strokeWidth={nodo.estado === 'ACTIVO' ? 2 : 1}

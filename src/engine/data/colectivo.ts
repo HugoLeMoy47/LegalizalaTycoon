@@ -3,7 +3,7 @@
  * El lider arranca solo; los tres perfiles especializados se reclutan en juego.
  */
 
-import { CAPACIDAD_HORAS_ALIADO, RECURSOS_INICIALES } from '../balance';
+import { CAPACIDAD_HORAS_ALIADO, META_FIRMAS, RECURSOS_INICIALES } from '../balance';
 import type { MiembroColectivo } from '../types';
 
 export const PLANTILLA_COLECTIVO: MiembroColectivo[] = [
@@ -45,6 +45,24 @@ export const PLANTILLA_COLECTIVO: MiembroColectivo[] = [
     apoyoSocialMinimo: 25,
     especialidad:
       'Vocero comunitario. Convierte Apoyo Social en Presión mediática y contiene las campañas de guerra sucia.',
+  },
+  {
+    // Cierre del arco del Nivel 0 (GUIA v2.2 seccion 3): el joven al que
+    // rescataste en el prologo vuelve como organizador territorial.
+    id: 'gael',
+    nombre: 'Gael Martínez',
+    rol: 'ACTIVISTA_TERRITORIAL',
+    horasAsignadas: 0,
+    activo: false,
+    capacidadHoras: CAPACIDAD_HORAS_ALIADO,
+    verboAsignado: null,
+    costoFondos: 2_500,
+    apoyoSocialMinimo: 30,
+    firmasMultiplicador: 1.25,
+    faseMinima: 'ESTATAL',
+    firmasMinimas: META_FIRMAS,
+    especialidad:
+      'Sobreviviente de una detención arbitraria. Conecta con las juventudes y el territorio: donde él convoca, la gente firma.',
   },
   {
     id: 'lupita',

@@ -29,14 +29,14 @@ function avanzar(estado: GameState): GameState {
 
 describe('Balance y Progresión Escalonada (Semanas 1 a 6)', () => {
   it('Debe iniciar con paneles de Colectivo y Comisión bloqueados', () => {
-    const estado = crearEstadoInicial();
+    const estado = crearEstadoInicial({ saltarNivel0: true });
     expect(estado.semanaActual).toBe(1);
     expect(estado.colectivoDesbloqueado).toBe(false);
     expect(estado.comisionDesbloqueada).toBe(false);
   });
 
   it('Debe desbloquear el colectivo en la semana 4 sin alterar el reloj legislativo', () => {
-    let estado = crearEstadoInicial();
+    let estado = crearEstadoInicial({ saltarNivel0: true });
     for (let i = 1; i < SEMANA_DESBLOQUEO_COLECTIVO; i += 1) {
       estado = avanzar(estado);
     }
@@ -48,7 +48,7 @@ describe('Balance y Progresión Escalonada (Semanas 1 a 6)', () => {
   });
 
   it('Debe desbloquear la comisión en la semana 6 y comenzar el reloj de congeladora', () => {
-    let estado = crearEstadoInicial();
+    let estado = crearEstadoInicial({ saltarNivel0: true });
     for (let i = 1; i < SEMANA_DESBLOQUEO_COMISION; i += 1) {
       estado = avanzar(estado);
     }
@@ -63,17 +63,19 @@ describe('Balance y Progresión Escalonada (Semanas 1 a 6)', () => {
   });
 
   it('Meter horas extra en semanas tempranas debe drenar resistencia severamente', () => {
-    let estado = crearEstadoInicial();
+    let estado = crearEstadoInicial({ saltarNivel0: true });
     estado.recursos.horasExtraMetidas = 20; // +20 hrs extra
     estado = avanzar(estado);
     // Consumo = (20/10)*15 = 30 + 0.5 pasivo = 30.5
-    expect(estado.recursos.resistencia).toBeCloseTo(69.5, 1);
+    // Arranca en 90 tras el Nivel 0: dos bloques de horas extra (−30) más el
+    // drenaje municipal (−0.5) dejan la Resistencia en 59.5.
+    expect(estado.recursos.resistencia).toBeCloseTo(59.5, 1);
   });
 });
 
 describe('Etapa A — El activista solitario (semanas 1 a 3)', () => {
   it('no permite reclutar ni cabildear mientras los paneles están bloqueados', () => {
-    const estado = crearEstadoInicial();
+    const estado = crearEstadoInicial({ saltarNivel0: true });
 
     const reclutamiento = ejecutarComando(estado, { tipo: 'RECLUTAR', miembroId: 'mateo' });
     expect(reclutamiento.ok).toBe(false);
@@ -89,7 +91,7 @@ describe('Etapa A — El activista solitario (semanas 1 a 3)', () => {
   });
 
   it('la presión política no desgasta a las bases antes de entrar a comisiones', () => {
-    let estado = crearEstadoInicial();
+    let estado = crearEstadoInicial({ saltarNivel0: true });
     estado.recursos.presionPolitica = 80;
     estado.recursos.apoyoSocial = 60;
     estado = avanzar(estado);
@@ -98,14 +100,14 @@ describe('Etapa A — El activista solitario (semanas 1 a 3)', () => {
   });
 
   it('el expediente no tiene sellos ni nodo activo antes de la semana 6', () => {
-    const estado = crearEstadoInicial();
+    const estado = crearEstadoInicial({ saltarNivel0: true });
     expect(estado.sellos).toEqual([]);
     expect(estado.rutaLegislativa.find((n) => n.id === 'com-gobernacion')?.estado).toBe('PENDIENTE');
     expect(estado.rutaLegislativa.find((n) => n.id === 'mesa-municipal')?.estado).toBe('PENDIENTE');
   });
 
   it('repartir 20 hrs semanales a Movilizar alcanza la meta de 500 firmas en 3 semanas', () => {
-    let estado = crearEstadoInicial();
+    let estado = crearEstadoInicial({ saltarNivel0: true });
     for (let semana = 0; semana < 3; semana += 1) {
       estado = ejecutarComando(estado, {
         tipo: 'ASIGNAR_HORAS',
@@ -126,7 +128,7 @@ describe('Etapa A — El activista solitario (semanas 1 a 3)', () => {
 
 describe('Etapa B — Hito del Cuartel (semana 4)', () => {
   it('la abogada pro-bono se suma sola, sin costo de reclutamiento', () => {
-    let estado = crearEstadoInicial();
+    let estado = crearEstadoInicial({ saltarNivel0: true });
     const fondosIniciales = estado.recursos.fondos;
     for (let i = 1; i < SEMANA_DESBLOQUEO_COLECTIVO; i += 1) estado = avanzar(estado);
 
@@ -138,7 +140,7 @@ describe('Etapa B — Hito del Cuartel (semana 4)', () => {
   });
 
   it('emite el hito con la capacidad total del colectivo en 60 hrs', () => {
-    let estado = crearEstadoInicial();
+    let estado = crearEstadoInicial({ saltarNivel0: true });
     for (let i = 1; i < SEMANA_DESBLOQUEO_COLECTIVO; i += 1) estado = avanzar(estado);
 
     expect(estado.hitoPendiente?.id).toBe('COLECTIVO_ABIERTO');
@@ -152,7 +154,7 @@ describe('Etapa B — Hito del Cuartel (semana 4)', () => {
 
 describe('Etapa C — Oficialía de Partes (semana 6)', () => {
   it('sella el expediente y activa el nodo de la comisión', () => {
-    let estado = crearEstadoInicial();
+    let estado = crearEstadoInicial({ saltarNivel0: true });
     for (let i = 1; i < SEMANA_DESBLOQUEO_COMISION; i += 1) estado = avanzar(estado);
 
     expect(estado.sellos).toContain('TURNADO');
@@ -163,7 +165,7 @@ describe('Etapa C — Oficialía de Partes (semana 6)', () => {
   });
 
   it('habilita el cabildeo directo una vez abierta la comisión', () => {
-    let estado = crearEstadoInicial();
+    let estado = crearEstadoInicial({ saltarNivel0: true });
     for (let i = 1; i < SEMANA_DESBLOQUEO_COMISION; i += 1) estado = avanzar(estado);
     estado.recursos.presionPolitica = 60;
 
@@ -178,7 +180,7 @@ describe('Etapa C — Oficialía de Partes (semana 6)', () => {
 
 describe('Gaceta Semanal', () => {
   it('publica un titular cada dos semanas y se cierra con CERRAR_GACETA', () => {
-    let estado = crearEstadoInicial();
+    let estado = crearEstadoInicial({ saltarNivel0: true });
     estado = avanzar(estado); // semana 2
     expect(estado.gacetaPendiente).not.toBeNull();
     expect(estado.gacetaPendiente?.fase).toBe('MUNICIPAL');

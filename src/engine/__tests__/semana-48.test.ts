@@ -17,6 +17,15 @@ import {
 import { avanzarSemanas, estadoSinComision } from './ayudas';
 import type { GameState } from '../index';
 
+/** Campos de trámite que la v2.2 exige en `Comision`; el test no los ejercita. */
+const COMISION_DE_PRUEBA = {
+  tipo: 'DICTAMINADORA',
+  semanasTramite: 0,
+  semanasTramiteCumplidas: 0,
+  apoyoSocialRequerido: 0,
+  seOmiteSiMutilada: false,
+} as const;
+
 function estadoEnVisperasDeLa48(conAliados: number): GameState {
   const estado = estadoSinComision(9090);
   estado.semanaActual = 47;
@@ -86,6 +95,7 @@ describe('Semana 48 — con colectivo (≥2 aliados)', () => {
   it('congela el reloj de la comisión durante las tres semanas', () => {
     let estado = estadoEnVisperasDeLa48(3);
     estado.comisionActiva = {
+      ...COMISION_DE_PRUEBA,
       id: 'com-salud',
       nombre: 'Comisión de prueba',
       fase: 'ESTATAL',
@@ -128,6 +138,7 @@ describe('Semana 48 — sin colectivo (líder mártir)', () => {
   it('el reloj de la comisión sí corre durante las tres semanas perdidas', () => {
     let estado = estadoEnVisperasDeLa48(0);
     estado.comisionActiva = {
+      ...COMISION_DE_PRUEBA,
       id: 'com-salud',
       nombre: 'Comisión de prueba',
       fase: 'ESTATAL',

@@ -13,6 +13,7 @@ import {
   UMBRAL_NIEBLA_MENTAL,
   crearEstadoInicial,
   faseDeSemana,
+  RECURSOS_TRAS_NIVEL_0,
 } from '../index';
 import { ESTRATEGA_COLECTIVO, OBSERVADOR_PASIVO } from '../../sim/politicas';
 import { simularPartida, verificarCalendarioDeFases } from '../../sim/simulador';
@@ -20,7 +21,7 @@ import { avanzarSemanasEnLaboratorio, estadoSinComision } from './ayudas';
 
 describe('Ciclo semanal — estado inicial', () => {
   it('arranca en la semana 1, fase municipal y en la Etapa A (sin turnar)', () => {
-    const estado = crearEstadoInicial();
+    const estado = crearEstadoInicial({ saltarNivel0: true });
     expect(estado.semanaActual).toBe(1);
     expect(estado.faseActual).toBe('MUNICIPAL');
     expect(estado.estadoJuego).toBe('JUGANDO');
@@ -32,7 +33,7 @@ describe('Ciclo semanal — estado inicial', () => {
   });
 
   it('el líder arranca solo: ningún aliado activo', () => {
-    const estado = crearEstadoInicial();
+    const estado = crearEstadoInicial({ saltarNivel0: true });
     const aliados = estado.colectivo.filter((m) => m.rol !== 'LIDER' && m.activo);
     expect(aliados).toHaveLength(0);
     expect(estado.colectivo.filter((m) => m.rol === 'LIDER')).toHaveLength(1);
@@ -43,7 +44,10 @@ describe('Ciclo semanal — drenajes pasivos (GUIA 3.A)', () => {
   it('aplica el drenaje de resistencia de la fase municipal (−0.5/sem)', () => {
     const inicial = estadoSinComision();
     const despues = avanzarSemanasEnLaboratorio(inicial, 1);
-    expect(despues.recursos.resistencia).toBeCloseTo(100 - DRENAJE_RESISTENCIA_POR_FASE.MUNICIPAL, 5);
+    expect(despues.recursos.resistencia).toBeCloseTo(
+      RECURSOS_TRAS_NIVEL_0.resistencia - DRENAJE_RESISTENCIA_POR_FASE.MUNICIPAL,
+      5,
+    );
   });
 
   it('drena apoyo social en proporción a la presión política (×0.05)', () => {
@@ -62,7 +66,7 @@ describe('Ciclo semanal — drenajes pasivos (GUIA 3.A)', () => {
     const despues = avanzarSemanasEnLaboratorio(estadoSinComision(), 10);
     expect(despues.semanaActual).toBe(11);
     expect(despues.recursos.resistencia).toBeCloseTo(
-      100 - DRENAJE_RESISTENCIA_POR_FASE.MUNICIPAL * 10,
+      RECURSOS_TRAS_NIVEL_0.resistencia - DRENAJE_RESISTENCIA_POR_FASE.MUNICIPAL * 10,
       5,
     );
   });

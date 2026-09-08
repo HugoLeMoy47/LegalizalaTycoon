@@ -20,7 +20,7 @@ import { avanzarSemanas, conSistemasDesbloqueados, estadoSinComision } from './a
 
 describe('Derrota por congeladora', () => {
   it('congela la comisión cuando el reloj llega a cero y termina la partida', () => {
-    let estado = conSistemasDesbloqueados(crearEstadoInicial());
+    let estado = conSistemasDesbloqueados(crearEstadoInicial({ saltarNivel0: true }));
     estado.comisionActiva!.relojCongeladoraSemanas = 1;
     estado = avanzarSemanas(estado, 1);
 
@@ -42,7 +42,7 @@ describe('Derrota por congeladora', () => {
   });
 
   it('no acepta comandos después del desenlace', () => {
-    let estado = conSistemasDesbloqueados(crearEstadoInicial());
+    let estado = conSistemasDesbloqueados(crearEstadoInicial({ saltarNivel0: true }));
     estado.comisionActiva!.relojCongeladoraSemanas = 1;
     estado = avanzarSemanas(estado, 1);
 
@@ -63,7 +63,7 @@ describe('Derrota por burnout', () => {
 
 describe('Victoria — promulgación en el DOF', () => {
   it('exige cámara revisora, resistencia, apoyo social y 65% de votos federales', () => {
-    const estado = crearEstadoInicial();
+    const estado = crearEstadoInicial({ saltarNivel0: true });
     const requisitos = evaluarRequisitosVictoria(estado);
     expect(requisitos.senadoAprobado).toBe(false);
     expect(requisitos.cumplidos).toBe(false);
@@ -94,11 +94,12 @@ describe('Victoria — promulgación en el DOF', () => {
 
 describe('Conteo de votos y semáforo parlamentario', () => {
   it('clasifica las posturas de la comisión activa', () => {
-    const estado = crearEstadoInicial();
+    const estado = crearEstadoInicial({ saltarNivel0: true });
     const conteo = contarVotos(estado.comisionActiva);
     expect(conteo.total).toBe(7);
     expect(conteo.FAVOR + conteo.INDECISO + conteo.OPOSITOR).toBe(conteo.total);
-    expect(conteo.requeridos).toBe(4);
+    // v2.2: la Comisión de Gobernación exige 5 de 7 (recalibración municipal).
+    expect(conteo.requeridos).toBe(5);
     expect(conteo.suficientes).toBe(false);
   });
 

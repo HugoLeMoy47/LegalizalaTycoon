@@ -24,6 +24,20 @@ export const RUTA_LEGISLATIVA: NodoRuta[] = [
     estado: 'PENDIENTE',
   },
   {
+    id: 'foro-municipal',
+    etiqueta: 'Foro de Consulta Vecinal',
+    fase: 'MUNICIPAL',
+    tipo: 'CONSULTA',
+    estado: 'PENDIENTE',
+  },
+  {
+    id: 'presupuesto-municipal',
+    etiqueta: 'Comisión de Hacienda Municipal',
+    fase: 'MUNICIPAL',
+    tipo: 'COMISION',
+    estado: 'PENDIENTE',
+  },
+  {
     id: 'pleno-cabildo',
     etiqueta: 'Pleno del Cabildo',
     fase: 'MUNICIPAL',
@@ -49,6 +63,20 @@ export const RUTA_LEGISLATIVA: NodoRuta[] = [
   {
     id: 'com-justicia',
     etiqueta: 'Comisión de Justicia y DH',
+    fase: 'ESTATAL',
+    tipo: 'COMISION',
+    estado: 'PENDIENTE',
+  },
+  {
+    id: 'foro-estatal',
+    etiqueta: 'Parlamento Abierto',
+    fase: 'ESTATAL',
+    tipo: 'CONSULTA',
+    estado: 'PENDIENTE',
+  },
+  {
+    id: 'presupuesto-estatal',
+    etiqueta: 'Comisión de Hacienda',
     fase: 'ESTATAL',
     tipo: 'COMISION',
     estado: 'PENDIENTE',

@@ -49,7 +49,7 @@ import { PanelComisiones } from './components/PanelComisiones';
 import { PanelHoras } from './components/PanelHoras';
 import { PantallaDesenlace } from './components/PantallaDesenlace';
 import { PestanasMovil, type PestanaMovil } from './components/PestanasMovil';
-import { PrologoModal } from './components/PrologoModal';
+import { ChatNivel0 } from './components/ChatNivel0';
 import { ReporteSemana48 } from './components/ReporteSemana48';
 import { Tooltip } from './components/Tooltip';
 import { TransicionSemana } from './components/TransicionSemana';
@@ -82,8 +82,7 @@ export function App() {
     bloqueado,
     transicion,
     limpiarTransicion,
-    prologoVisto,
-    asumirMandato,
+    enPrologo,
     tutorialVisto,
     terminarTutorial,
     repetirTutorial,
@@ -93,8 +92,7 @@ export function App() {
     estado.estadoJuego === 'DESCANSO_FORZADO_SEM_48' &&
     estado.reporteSemana48?.semanaEmision === estado.semanaActual;
 
-  const mostrarPrologo = !prologoVisto;
-  const mostrarWizard = prologoVisto && !tutorialVisto && enJuego;
+  const mostrarWizard = !enPrologo && !tutorialVisto && enJuego;
 
   // El tutorial cambia de pestaña por el jugador para que el objetivo exista.
   const alCambiarPasoTutorial = useCallback(
@@ -140,7 +138,7 @@ export function App() {
       {mostrarReporte48 && !transicion && estado.reporteSemana48 && (
         <ReporteSemana48 reporte={estado.reporteSemana48} />
       )}
-      {!enJuego && !transicion && (
+      {!enJuego && !enPrologo && !transicion && (
         <PantallaDesenlace
           estado={estado}
           reiniciar={() => {
@@ -156,7 +154,7 @@ export function App() {
           esMovil={esMovil}
         />
       )}
-      {mostrarPrologo && <PrologoModal onAsumir={asumirMandato} />}
+      {enPrologo && <ChatNivel0 estado={estado} despachar={despachar} />}
 
       <div className="pointer-events-none fixed bottom-24 left-1/2 z-[76] w-full max-w-md -translate-x-1/2 space-y-2 px-4 xl:bottom-4">
         {avisos.map((aviso) => (

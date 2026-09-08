@@ -25,9 +25,17 @@ export type Partido =
 
 export type Postura = 'FAVOR' | 'INDECISO' | 'OPOSITOR';
 
-export type RolColectivo = 'LIDER' | 'ABOGADA' | 'VOCERO' | 'ENLACE_BASE';
+export type RolColectivo =
+  | 'LIDER'
+  | 'ABOGADA'
+  | 'VOCERO'
+  | 'ENLACE_BASE'
+  /** Gael Martinez, sobreviviente del Nivel 0 (GUIA v2.2 seccion 3). */
+  | 'ACTIVISTA_TERRITORIAL';
 
 export type EstadoJuego =
+  /** Sub-estado del Nivel 0 interactivo, previo a la Semana 1 (GUIA v2.2 seccion 2). */
+  | 'PROLOGO_NIVEL_0'
   | 'JUGANDO'
   | 'DESCANSO_FORZADO_SEM_48'
   | 'VICTORIA_DOF'
@@ -80,6 +88,14 @@ export interface Legislador {
   esCoordinador?: boolean;
 }
 
+/**
+ * Naturaleza del cuello de botella (GUIA v2.2 seccion 4.1).
+ *
+ * El embudo real no es una sola comision dictaminadora: entre el turno y el
+ * Pleno hay foros de consulta obligatorios y opiniones de Hacienda.
+ */
+export type TipoComision = 'DICTAMINADORA' | 'PARLAMENTO_ABIERTO' | 'PRESUPUESTO';
+
 export interface Comision {
   id: string;
   nombre: string;
@@ -104,13 +120,29 @@ export interface Comision {
   relojInicial: number;
   /** Marca la comision cuya aprobacion en Pleno desemboca en el DOF. */
   esUltimaInstancia: boolean;
+
+  // --- EXTENSIONES v2.2 (GUIA_NIVEL0_NARRATIVA_Y_REMEDIACION seccion 4) ---
+  /** Que clase de tramite es. Las dictaminadoras votan; las demas consumen calendario. */
+  tipo: TipoComision;
+  /** Semanas de sesiones que el tramite consume antes de poder resolverse. */
+  semanasTramite: number;
+  /** Semanas de tramite ya agotadas. */
+  semanasTramiteCumplidas: number;
+  /** Apoyo Social minimo para superar el tramite (foro de parlamento abierto). */
+  apoyoSocialRequerido: number;
+  /**
+   * La comision de presupuesto se salta cuando la ley fue mutilada: sin
+   * presupuesto no hay nada que dictaminar en Hacienda. Incentivo perverso
+   * deliberado (Bitacora #014 seccion 3.C.3 y riesgo 4).
+   */
+  seOmiteSiMutilada: boolean;
 }
 
 export interface NodoRuta {
   id: string;
   etiqueta: string;
   fase: FaseJuego;
-  tipo: 'MESA' | 'COMISION' | 'PLENO' | 'PROMULGACION';
+  tipo: 'MESA' | 'COMISION' | 'CONSULTA' | 'PLENO' | 'PROMULGACION';
   estado: EstadoNodo;
 }
 
@@ -136,6 +168,14 @@ export interface MiembroColectivo {
   apoyoSocialMinimo: number;
   /** Texto de ficha para la UI. */
   especialidad: string;
+
+  // --- EXTENSIONES v2.2 ---
+  /** Multiplicador propio sobre la recoleccion de firmas ciudadanas. */
+  firmasMultiplicador?: number;
+  /** Fase minima en la que el perfil acepta sumarse (null = desde el inicio). */
+  faseMinima?: FaseJuego;
+  /** Firmas ciudadanas que lo hacen aparecer aunque la fase no haya llegado. */
+  firmasMinimas?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -182,7 +222,7 @@ export interface Decision {
  * A diferencia de `Decision`, no bloquea el turno: es un acuse informativo.
  */
 export interface HitoDesbloqueo {
-  id: 'COLECTIVO_ABIERTO' | 'COMISION_ABIERTA';
+  id: 'COLECTIVO_ABIERTO' | 'COMISION_ABIERTA' | 'RECESO_ABIERTO';
   titulo: string;
   texto: string;
   /** Sello institucional que acompaña al anuncio, si aplica. */
@@ -226,6 +266,98 @@ export interface ReporteColectivo {
   impactoRelojSemanas: number;
   impactoApoyoSocial: number;
   impactoResistencia: number;
+}
+
+// ---------------------------------------------------------------------------
+// Nivel 0 — "El Rescate de Gael" (GUIA v2.2 seccion 2)
+// ---------------------------------------------------------------------------
+
+/** Un mensaje del chat de la Red Vecinal de Alerta. */
+export interface MensajeChat {
+  /** Nombre visible de quien escribe. */
+  autor: string;
+  /** Emoji de avatar; la UI no carga imagenes (assets procedimentales). */
+  avatar: string;
+  texto: string;
+  /** true cuando el mensaje lo escribe el jugador (burbuja propia). */
+  propio?: boolean;
+  /** Marca el mensaje del sistema que explica la leccion del paso. */
+  esNota?: boolean;
+}
+
+/**
+ * Una respuesta tactica del jugador.
+ *
+ * Las opciones no civicas (`civica: false`) estan bloqueadas
+ * pedagogicamente: el juego explica por que y devuelve el turno. Es la unica
+ * parte del juego donde una opcion no se puede tomar, y es deliberado — pagar
+ * la mordida no es una estrategia alternativa, es el problema que la partida
+ * entera intenta desmontar.
+ */
+export interface OpcionNivel0 {
+  id: string;
+  etiqueta: string;
+  /** Lo que el jugador escribe en el chat al elegirla. */
+  mensaje: string;
+  civica: boolean;
+  /** Explicacion que se devuelve cuando la opcion esta bloqueada. */
+  reprimenda?: string;
+  /** Efectos sobre los recursos, solo en las opciones civicas. */
+  efectos?: { apoyoSocial?: number; presionPolitica?: number; solidezTecnica?: number };
+  /** Respuesta del grupo tras elegirla. */
+  respuesta?: MensajeChat[];
+}
+
+export interface PasoNivel0 {
+  numero: 1 | 2 | 3;
+  /** Recurso que el paso ensena, para el encabezado del chat. */
+  leccion: string;
+  situacion: string;
+  apertura: MensajeChat[];
+  opciones: OpcionNivel0[];
+}
+
+/** Avance del jugador dentro del Nivel 0. */
+export interface EstadoNivel0 {
+  /** 1, 2 y 3 son los micro-pasos; luego la epifania y el cierre. */
+  paso: 1 | 2 | 3 | 'EPIFANIA' | 'COMPLETADO';
+  /** Historial del chat, en orden de llegada. */
+  mensajes: MensajeChat[];
+  /** Cuantas veces intento pagar la mordida (senal pedagogica y telemetria). */
+  intentosDeMordida: number;
+}
+
+// ---------------------------------------------------------------------------
+// Telemetria y learning analytics (GUIA v2.2 seccion 6)
+// ---------------------------------------------------------------------------
+
+export type NombreEventoTelemetria =
+  | 'NIVEL_0_COMPLETADO'
+  | 'INICIATIVA_PRESENTADA_SEM_6'
+  | 'APROBADO_MUNICIPAL'
+  | 'CRISIS_BURNOUT_SEM_48'
+  | 'LEY_MUTILADA_DECISION'
+  | 'APROBADO_ESTATAL'
+  | 'FIN_PARTIDA';
+
+/**
+ * Evento anonimo del embudo civico. No lleva identificadores del jugador ni
+ * texto libre: solo el hito, la semana y la foto de recursos.
+ *
+ * El motor es puro, asi que `timestamp` sale en 0 y lo estampa el sumidero
+ * de la capa de presentacion (`useJuego`) al drenarlo.
+ */
+export interface EventoTelemetria {
+  evento: NombreEventoTelemetria;
+  semana: number;
+  recursos: {
+    apoyo: number;
+    presion: number;
+    resistencia: number;
+    fondos: number;
+  };
+  metadata?: Record<string, string | number | boolean>;
+  timestamp: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -308,6 +440,19 @@ export interface GameState {
   ultimoTurno: ResumenTurno | null;
   /** Resumen de la ultima corrida de varias semanas, si la hubo. */
   ultimoAvance: ResumenAvance | null;
+
+  // --- CAMPOS v2.2 (GUIA_NIVEL0_NARRATIVA_Y_REMEDIACION) ---
+  /** Avance del Nivel 0 interactivo. */
+  nivel0: EstadoNivel0;
+  /**
+   * Semana en la que termina el receso parlamentario y abre el siguiente
+   * periodo de sesiones. null cuando el Congreso esta en periodo ordinario.
+   */
+  recesoHasta: number | null;
+  /** Eventos de learning analytics acumulados durante la partida. */
+  telemetria: EventoTelemetria[];
+  /** Semanas que el dictamen lleva enlistado esperando turno en el Pleno. */
+  semanasEnOrdenDelDia: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -327,6 +472,8 @@ export type ComandoJuego =
   | { tipo: 'CERRAR_GACETA' }
   | { tipo: 'COMPLETAR_ONBOARDING' }
   | { tipo: 'MARCAR_BITACORA_LEIDA' }
+  | { tipo: 'RESPONDER_NIVEL_0'; opcionId: string }
+  | { tipo: 'ACTIVAR_MANDATO' }
   | { tipo: 'AVANZAR_SEMANA' }
   | { tipo: 'AVANZAR_HASTA_EVENTO'; maximoSemanas?: number };
 

@@ -69,7 +69,7 @@ export function aplicar(estado: GameState, comandos: ComandoJuego[]): GameState 
  * early game (esa vive en `balance_early_game.test.ts`).
  */
 export function estadoSinComision(semilla = 1234): GameState {
-  const estado = crearEstadoInicial({ semilla });
+  const estado = crearEstadoInicial({ semilla, saltarNivel0: true });
   estado.comisionActiva = null;
   estado.colaComisiones = [];
   estado.colectivoDesbloqueado = true;
